@@ -1,154 +1,155 @@
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional
 from openai import OpenAI
 from anthropic import Anthropic
-import google.generativeai as genai
+from google import genai
+
 
 class LLMClient:
     """Client for calling multiple LLM APIs"""
-    
+
     def __init__(self):
-        """Initialize all LLM clients with API keys"""
         print("Initializing LLM clients...")
-        
-        # OpenAI
-        self.openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
+        # OpenAI (GPT-5)
+        self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         print("✓ OpenAI initialized")
-        
-        # Anthropic
-        self.anthropic_client = Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+
+        # Anthropic (Claude)
+        self.anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
         print("✓ Anthropic initialized")
-        
-        # Google Gemini
-        genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+
+        # Google (Gemini)
+        self.gemini_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
         print("✓ Google Gemini initialized")
 
+        # DeepSeek: OpenAI-compatible API
         self.deepseek_client = OpenAI(
             api_key=os.getenv("DEEPSEEK_API_KEY"),
-            base_url="https://api.deepseek.com/v1"
+            base_url="https://api.deepseek.com",
         )
         print("✓ DeepSeek initialized")
-        
+
         print("All LLM clients ready!")
-        
-    def query_gpt5(self, prompt: str, max_tokens: int = 2000) -> str:
-        """Query GPT-5"""
+
+    # ---------------------------- GPT-5 ----------------------------
+    def query_gpt5(self, prompt: str, max_tokens: int = 5000) -> str:
         try:
-            response = self.openai_client.chat.completions.create(
+            response = self.openai_client.responses.create(
                 model="gpt-5",
-                messages=[{"role": "user", "content": prompt}],
-                max_completion_tokens=max_tokens
+                input=[
+                    {"role": "user", "content": prompt}
+                ],
+                max_output_tokens=max_tokens,
+                tools=[
+                    {"type": "web_search"}
+                ],
             )
-            return response.choices[0].message.content
+
+            return response.output_text
+
         except Exception as e:
             print(f"❌ GPT-5 Error: {e}")
-            return f"Error querying GPT-5: {str(e)}"
-    
-    def query_claude(self, prompt: str, max_tokens: int = 2000) -> str:
-        """Query Claude Sonnet 4.5"""
+            return f"Error querying GPT-5: {e}"
+        
+    # ---------------------------- Claude ----------------------------
+    def query_claude(self, prompt: str, max_tokens: int = 5000) -> str:
         try:
             response = self.anthropic_client.messages.create(
                 model="claude-sonnet-4-5-20250929",
                 max_tokens=max_tokens,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
+                tools=[{
+                    "type": "web_search_20250305",
+                    "name": "web_search"
+                }]
             )
-            return response.content[0].text
+
+            return "".join(b.text for b in response.content if b.type == "text") or ""
         except Exception as e:
             print(f"❌ Claude Error: {e}")
-            return f"Error querying Claude: {str(e)}"
-    
-    def query_gemini(self, prompt: str, max_tokens: int = 2000) -> str:
-        """Query Google Gemini 2.5 Flash"""
+            return f"Error querying Claude: {e}"
+
+    # ---------------------------- Gemini ----------------------------
+    def query_gemini(self, prompt: str, max_tokens: int = 5000) -> str:
         try:
-            model = genai.GenerativeModel('gemini-2.5-flash')
-            generation_config = genai.types.GenerationConfig(
-                max_output_tokens=max_tokens
+            from google.genai import types
+
+            search_tool = types.Tool(
+                google_search=types.GoogleSearch()
             )
-            response = model.generate_content(
-                prompt,
-                generation_config=generation_config
+
+            config = types.GenerateContentConfig(
+                tools=[search_tool],
+                max_output_tokens=max_tokens,
             )
+
+            response = self.gemini_client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=config,
+            )
+
             return response.text
+
         except Exception as e:
             print(f"❌ Gemini Error: {e}")
-            return f"Error querying Gemini: {str(e)}"
-    
-    def query_deepseek(self, prompt: str, max_tokens: int = 2000) -> str:
-        """Query DeepSeek (OpenAI-compatible API)"""
-        try:
-            deepseek_client = OpenAI(
-                api_key=os.getenv('DEEPSEEK_API_KEY'),
-                base_url="https://api.deepseek.com/v1"
-            )
-            response = deepseek_client.chat.completions.create(
-                model="deepseek-chat",
-                messages=[{"role": "user", "content": prompt}],
+            return f"Error querying Gemini: {e}"
 
+
+    # ---------------------------- DeepSeek ----------------------------
+    def query_deepseek(self, prompt: str, max_tokens: int = 5000) -> str:
+        """
+        Query DeepSeek using OpenAI-compatible API
+        """
+        try:
+            # DeepSeek uses the standard chat completions format
+            response = self.deepseek_client.chat.completions.create(
+                model="deepseek-reasoner",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
                 max_tokens=max_tokens
             )
             return response.choices[0].message.content
         except Exception as e:
             print(f"❌ DeepSeek Error: {e}")
-            return f"Error querying DeepSeek: {str(e)}"
-    
+            return f"Error querying DeepSeek: {e}"
+
+    # ---------------------------- Routing ----------------------------
     def query_model(self, model_name: str, prompt: str) -> str:
-        """Query a specific model by name"""
         model_map = {
-            'gpt5': self.query_gpt5,
-            'claude': self.query_claude,
-            'gemini': self.query_gemini,
-            'deepseek': self.query_deepseek
+            "gpt5": self.query_gpt5,
+            "claude": self.query_claude,
+            "gemini": self.query_gemini,
+            "deepseek": self.query_deepseek,
         }
-        
         if model_name not in model_map:
-            return f"Error: Unknown model '{model_name}'"
-        
+            return f"Unknown model '{model_name}'"
         return model_map[model_name](prompt)
-    
+
+    # ---------------------------- Multi-run ----------------------------
     def query_all_models(self, models: List[str], prompt: str, num_runs: int = 1) -> Dict:
-        """
-        Query multiple models multiple times
-        
-        Args:
-            models: List of model names to query
-            prompt: The prompt to send
-            num_runs: Number of times to run each model
-            
-        Returns:
-            Dict with model names as keys and list of responses as values
-        """
         results = {}
-        total_calls = len(models) * num_runs
-        current_call = 0
-        
-        print(f"\n{'='*60}")
-        print(f"Starting multi-run testing:")
-        print(f"  Models: {len(models)}")
-        print(f"  Runs per model: {num_runs}")
-        print(f"  Total API calls: {total_calls}")
-        print(f"{'='*60}\n")
-        
-        for model in models:
-            print(f"\n🔄 Testing {model.upper()}...")
-            model_responses = []
-            
-            for run in range(num_runs):
-                current_call += 1
-                print(f"  Run {run + 1}/{num_runs} ({current_call}/{total_calls} total)... ", end='')
-                
-                response = self.query_model(model, prompt)
-                model_responses.append({
-                    "run": run + 1,
-                    "response": response
+        for m in models:
+            results[m] = []
+            for i in range(num_runs):
+                results[m].append({
+                    "run": i + 1,
+                    "response": self.query_model(m, prompt),
                 })
-                
-                print("✓")
-            
-            results[model] = model_responses
-            print(f"✅ {model.upper()} complete ({num_runs} runs)")
-        
-        print(f"\n{'='*60}")
-        print(f"✅ All testing complete! ({total_calls} total API calls)")
-        print(f"{'='*60}\n")
-        
         return results
+
+    # ---------------------------- Unified interface ----------------------------
+    async def generate_response(self, model_name: str, message: str, conversation_history=None):
+        """
+        Generate response - compatible with main.py
+        """
+        full_prompt = ""
+
+        if conversation_history:
+            for msg in conversation_history:
+                full_prompt += f"{msg['role']}: {msg['content']}\n"
+        full_prompt += f"user: {message}\n"
+
+        return self.query_model(model_name.lower(), full_prompt)

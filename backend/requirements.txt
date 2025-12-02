@@ -1,13 +1,11 @@
-# --- Core backend ---
-fastapi==0.110.0
-uvicorn==0.29.0
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
 python-dotenv==1.0.1
-
-# --- LLM APIs (latest stable) ---
-openai==1.57.4
-anthropic==0.73.0
-google-generativeai==0.5.4
-
-# --- Libraries these depend on ---
+openai==1.66.0
+anthropic==0.40.0
 httpx==0.28.1
-pydantic==2.7.4
+google-genai
+sqlalchemy==2.0.36
+pandas==2.2.3
+openpyxl==3.1.5
