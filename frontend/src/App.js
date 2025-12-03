@@ -198,6 +198,7 @@ function App() {
     setIsScored(false);
     setMessage("");
     setError("");
+    setFinalSummary(null);
     console.log("🆕 Started new conversation");
   };
 
