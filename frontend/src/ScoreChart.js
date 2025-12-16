@@ -82,6 +82,12 @@ const ScoreChart = ({ summary }) => {
           // Get categories for this model
           const categories = Object.keys(categoryScores);
 
+          console.log("=== DEBUG SCORE CHART ===");
+          console.log("Prompt type from summary:", summary.prompt_type);
+          console.log("Categories received:", categories);
+          console.log("Weights being used:", categoryWeights);
+          console.log("========================");
+
           return (
             <div key={model} className="model-section">
               {/* Model name and overall score */}

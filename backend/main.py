@@ -438,6 +438,14 @@ async def get_final_summary(conversation_id: int, db: Session = Depends(get_db))
     """
     Calculate and return average scores per model + recommendations + category breakdowns
     """
+    # ✨ ADD THIS - Get conversation first to access prompt_type
+    conversation = db.query(Conversation).filter(
+        Conversation.id == conversation_id
+    ).first()
+    
+    if not conversation:
+        return {"error": "Conversation not found"}
+    
     # Get all responses for this conversation
     responses = db.query(ModelResponse).join(ConversationTurn).filter(
         ConversationTurn.conversation_id == conversation_id,
@@ -487,8 +495,6 @@ async def get_final_summary(conversation_id: int, db: Session = Depends(get_db))
         for category, scores in categories.items():
             if scores:
                 # Average the raw scores (0-1 scale) across all runs
-                # Example: if 3 runs gave [0.2, 0.1, 0.3] for "hallucination"
-                # Average = (0.2 + 0.1 + 0.3) / 3 = 0.2
                 avg_score = sum(scores) / len(scores)
                 category_averages[model][category] = round(avg_score, 3)
                 
@@ -506,9 +512,10 @@ async def get_final_summary(conversation_id: int, db: Session = Depends(get_db))
     return {
         "conversation_id": conversation_id,
         "averages": averages,
-        "category_averages": category_averages,  # ✨ NEW: Category breakdown
+        "category_averages": category_averages,
         "recommended_models": recommended,
         "max_score": max_score,
+        "prompt_type": conversation.prompt_type,  # ✨ ADD THIS LINE
     }
 
 
