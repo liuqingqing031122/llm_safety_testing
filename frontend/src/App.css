@@ -398,6 +398,7 @@ button:hover:not(:disabled) {
   background: white;
 }
 
+/* Run summary improvements */
 .run-summary {
   padding: 0.75rem;
   cursor: pointer;
@@ -407,10 +408,44 @@ button:hover:not(:disabled) {
   background: #e9ecef;
   border-radius: 6px;
   font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.run-summary:hover {
-  background: #dee2e6;
+.run-summary-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.run-number {
+  font-weight: 600;
+}
+
+/* Expand hint styling */
+.expand-hint {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #6b7280;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.expand-hint::before {
+  content: "▸";
+  font-style: normal;
+}
+
+.run-details[open] .expand-hint::before {
+  content: "▾";
+}
+
+.run-details[open] .expand-hint {
+  color: #9ca3af;
 }
 
 .run-details[open] .run-summary {
@@ -854,4 +889,92 @@ button:hover:not(:disabled) {
   font-weight: 700;
   color: #28a745;
   padding: 10px 0;
+}
+
+/* ==================== Notice Box Styles ==================== */
+.notice-box {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 3px solid #f59e0b;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+  }
+}
+
+.notice-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.notice-icon {
+  font-size: 1.5rem;
+  animation: shake 3s ease-in-out infinite;
+}
+
+@keyframes shake {
+  0%,
+  90%,
+  100% {
+    transform: rotate(0deg);
+  }
+  92%,
+  96% {
+    transform: rotate(-10deg);
+  }
+  94%,
+  98% {
+    transform: rotate(10deg);
+  }
+}
+
+.notice-content {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notice-content li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  border-left: 4px solid #f59e0b;
+  color: #78350f;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  transition: all 0.2s ease;
+}
+
+.notice-content li:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateX(5px);
+}
+
+.notice-content li:last-child {
+  margin-bottom: 0;
+}
+
+.notice-content li::before {
+  content: "⚡";
+  font-size: 1.2rem;
+  flex-shrink: 0;
 }

@@ -436,7 +436,7 @@ async def get_conversation_history(
 @app.get("/api/conversations/{conversation_id}/final-summary")
 async def get_final_summary(conversation_id: int, db: Session = Depends(get_db)):
     """
-    Calculate and return average scores per model + recommendations
+    Calculate and return average scores per model + recommendations + category breakdowns
     """
     # Get all responses for this conversation
     responses = db.query(ModelResponse).join(ConversationTurn).filter(
@@ -447,23 +447,58 @@ async def get_final_summary(conversation_id: int, db: Session = Depends(get_db))
     if not responses:
         return {"error": "No scored responses"}
 
-    # Group by model
+    # Group by model - collect both overall scores and category scores
     model_scores = {}
+    model_category_scores = {}
+    
     for resp in responses:
         model = resp.model_name
-        model_scores.setdefault(model, [])
+        
+        # Initialize if needed
+        if model not in model_scores:
+            model_scores[model] = []
+            model_category_scores[model] = {}
+        
+        # Add overall score
         if resp.weighted_score is not None:
             model_scores[model].append(resp.weighted_score)
+        
+        # Extract category scores from score_data
+        if resp.score_data and 'raw_scores' in resp.score_data:
+            raw_scores = resp.score_data['raw_scores']
+            
+            # Collect each category score (excluding 'reasoning')
+            for category, score in raw_scores.items():
+                if category != 'reasoning' and isinstance(score, (int, float)):
+                    if category not in model_category_scores[model]:
+                        model_category_scores[model][category] = []
+                    model_category_scores[model][category].append(score)
 
-    # Compute averages
+    # Compute overall averages
     averages = {
         model: round(sum(scores) / len(scores), 2)
         for model, scores in model_scores.items()
     }
+    
+    # Compute category averages across all runs
+    category_averages = {}
+    for model, categories in model_category_scores.items():
+        category_averages[model] = {}
+        for category, scores in categories.items():
+            if scores:
+                # Average the raw scores (0-1 scale) across all runs
+                # Example: if 3 runs gave [0.2, 0.1, 0.3] for "hallucination"
+                # Average = (0.2 + 0.1 + 0.3) / 3 = 0.2
+                avg_score = sum(scores) / len(scores)
+                category_averages[model][category] = round(avg_score, 3)
+                
+                # Debug output
+                print(f"   📊 {model} - {category}: {scores} → avg: {avg_score:.3f}")
 
     # Determine recommendation
     if len(averages) == 1:
         recommended = list(averages.keys())
+        max_score = list(averages.values())[0]
     else:
         max_score = max(averages.values())
         recommended = [m for m, avg in averages.items() if avg == max_score]
@@ -471,6 +506,7 @@ async def get_final_summary(conversation_id: int, db: Session = Depends(get_db))
     return {
         "conversation_id": conversation_id,
         "averages": averages,
+        "category_averages": category_averages,  # ✨ NEW: Category breakdown
         "recommended_models": recommended,
         "max_score": max_score,
     }

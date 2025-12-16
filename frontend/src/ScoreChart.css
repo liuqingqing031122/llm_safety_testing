@@ -1,0 +1,232 @@
+/* ==================== Score Chart Container ==================== */
+.score-chart-container {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  margin-bottom: 2rem;
+}
+
+.chart-title {
+  color: #333;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+/* ==================== Models Section ==================== */
+.models-section {
+  margin-bottom: 2rem;
+}
+
+.model-section {
+  margin-bottom: 2.5rem;
+}
+
+/* ==================== Model Header ==================== */
+.model-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.model-score {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.model-score.high {
+  color: #28a745;
+}
+
+.model-score.medium {
+  color: #ffc107;
+}
+
+.model-score.low {
+  color: #dc3545;
+}
+
+/* ==================== Bar Container ==================== */
+.bar-container {
+  width: 100%;
+  height: 50px;
+  background: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  border: 2px solid #d1d5db;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.score-bar-stacked {
+  height: 100%;
+  position: relative;
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: width 0.8s ease;
+}
+
+.bar-segment-stacked {
+  height: 100%;
+  position: relative;
+  transition: width 0.8s ease;
+}
+
+/* ==================== Category Grid ==================== */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.category-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.category-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-name {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.category-score {
+  color: #1f2937;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* ==================== Recommended Section ==================== */
+.recommended-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  margin-top: 2rem;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.recommended-title {
+  color: white;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.recommended-model {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================== Legend Section ==================== */
+.legend-section {
+  padding: 1.25rem;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+  margin-top: 1.5rem;
+}
+
+.legend-title {
+  margin: 0 0 0.75rem 0;
+  color: #166534;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.legend-list {
+  margin: 0;
+  padding-left: 1.5rem;
+  font-size: 0.85rem;
+  color: #166534;
+  line-height: 1.8;
+}
+
+.legend-list li {
+  margin-bottom: 0.25rem;
+}
+
+/* ==================== Responsive Design ==================== */
+@media (max-width: 768px) {
+  .score-chart-container {
+    padding: 1.5rem;
+  }
+
+  .chart-title {
+    font-size: 1.2rem;
+  }
+
+  .model-name {
+    font-size: 1rem;
+  }
+
+  .model-score {
+    font-size: 1.1rem;
+  }
+
+  .bar-container {
+    height: 40px;
+  }
+
+  .category-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recommended-model {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .score-chart-container {
+    padding: 1rem;
+  }
+
+  .chart-title {
+    font-size: 1rem;
+  }
+
+  .model-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .bar-container {
+    height: 35px;
+  }
+
+  .recommended-title {
+    font-size: 1rem;
+  }
+
+  .recommended-model {
+    font-size: 1.2rem;
+  }
+}

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./App.css";
+import ScoreChart from "./ScoreChart";
 
 function App() {
   const [message, setMessage] = useState("");
@@ -218,27 +219,6 @@ function App() {
     return "medium";
   };
 
-  const FinalSummary = ({ summary }) => (
-    <div className="final-summary">
-      <h2>🏁 Final Summary</h2>
-
-      <h3>Average Scores</h3>
-      <div className="summary-list">
-        {Object.entries(summary.averages).map(([model, score]) => (
-          <div key={model} className="summary-row">
-            <span className="summary-model">{model.toUpperCase()}</span>
-            <span className="summary-score">{score}/100</span>
-          </div>
-        ))}
-      </div>
-
-      <h3>Recommended Model</h3>
-      <p className="recommended">
-        {summary.recommended_models.join(", ").toUpperCase()}
-      </p>
-    </div>
-  );
-
   return (
     <div className="App">
       <header className="App-header">
@@ -262,12 +242,6 @@ function App() {
               : "📊 Start Scoring"}
           </button>
         </div>
-
-        {conversationId && (
-          <div className="conversation-info">
-            <small>Conversation ID: {conversationId}</small>
-          </div>
-        )}
       </header>
 
       <main className="container">
@@ -326,11 +300,23 @@ function App() {
             {isLoading ? "⏳ Generating..." : "📤 Send Message"}
           </button>
 
-          <div className="info-box">
-            <small>
-              💡 System will automatically detect prompt type and run 3 times
-              per model (or 1 time for conversational prompts)
-            </small>
+          <div className="notice-box">
+            <div className="notice-header">
+              <span className="notice-icon">⚠️</span>
+              <span>IMPORTANT NOTICE</span>
+            </div>
+            <ul className="notice-content">
+              <li>
+                Please click 'New Conversation' every time you ask a new
+                question (or keep asking if you want to follow up on the
+                previous question).
+              </li>
+              <li>
+                System will automatically run 25 times per model for stability
+                (or 1 time for conversational prompts). This will take quite a
+                long time, please wait patiently.
+              </li>
+            </ul>
           </div>
         </form>
 
@@ -358,25 +344,32 @@ function App() {
                     {runs.map((run, runIdx) => (
                       <details key={runIdx} className="run-details">
                         <summary className="run-summary">
-                          Run {run.run}
-                          {run.scored && run.weighted_score !== null && (
-                            <span
-                              className={`score-badge ${
-                                run.weighted_score >= 80
-                                  ? "high"
-                                  : run.weighted_score >= 60
-                                  ? "medium"
-                                  : "low"
-                              }`}
-                            >
-                              Score: {run.weighted_score.toFixed(1)}/100
-                            </span>
-                          )}
-                          {run.response_time && (
-                            <span className="time-badge">
-                              {run.response_time.toFixed(2)}s
-                            </span>
-                          )}
+                          <div className="run-summary-main">
+                            <span className="run-number">Run {run.run}</span>
+                            {run.scored && run.weighted_score !== null && (
+                              <span
+                                className={`score-badge ${
+                                  run.weighted_score >= 80
+                                    ? "high"
+                                    : run.weighted_score >= 60
+                                    ? "medium"
+                                    : "low"
+                                }`}
+                              >
+                                Score: {run.weighted_score.toFixed(1)}/100
+                              </span>
+                            )}
+                            {run.response_time && (
+                              <span className="time-badge">
+                                {run.response_time.toFixed(2)}s
+                              </span>
+                            )}
+                          </div>
+                          <div className="expand-hint">
+                            {run.scored && run.score_detail
+                              ? "Click to view detailed scoring and original response"
+                              : "Click to view response"}
+                          </div>
                         </summary>
 
                         <div className="run-content">
@@ -463,7 +456,7 @@ function App() {
           </div>
         )}
 
-        {finalSummary && <FinalSummary summary={finalSummary} />}
+        {finalSummary && <ScoreChart summary={finalSummary} />}
 
         {turns.length === 0 && (
           <div className="empty-state">
