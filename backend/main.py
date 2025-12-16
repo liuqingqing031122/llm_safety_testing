@@ -522,6 +522,10 @@ async def get_final_summary(conversation_id: int, db: Session = Depends(get_db))
 
 if __name__ == "__main__":
     import uvicorn
+    import os
+    
+    port = int(os.getenv("PORT", 8000))  # ✨ Add this line
+    
     print("🚀 Starting Medical LLM Benchmark API...")
-    print("📍 API docs: http://localhost:8000/docs")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print(f"📍 API docs: http://0.0.0.0:{port}/docs")  # ✨ Change this
+    uvicorn.run(app, host="0.0.0.0", port=port)  # ✨ Change port=8000 to port=port
