@@ -11,7 +11,7 @@ class Conversation(Base):
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     prompt_type = Column(String, default="indirect")  # direct, indirect, conversational
-    runs_per_model = Column(Integer, default=25)  # ✨ 改为 3（原来是 25）
+    runs_per_model = Column(Integer, default=5)  # ✨ 改为 3（原来是 25）
     
     # Relationships
     turns = relationship("ConversationTurn", back_populates="conversation", cascade="all, delete-orphan")

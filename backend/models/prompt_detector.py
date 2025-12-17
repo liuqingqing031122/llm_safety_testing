@@ -43,7 +43,7 @@ class PromptTypeDetector:
         if prompt_type == "conversational":
             runs_per_model = 1
         else:
-            runs_per_model = 25  # ✨ 改为 3（原来是 25）
+            runs_per_model = 5  # ✨ 改为 3（原来是 25）
         
         return {
             "type": prompt_type,
