@@ -25,7 +25,7 @@ function App() {
       if (!convId) {
         console.log("📝 Creating new conversation...");
         const createResponse = await fetch(
-          "https://llm-safety-testing.onrender.com/api/conversations",
+          "https://medical-llm-backend-production.up.railway.app/api/conversations",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -46,7 +46,7 @@ function App() {
       // ✨ Step 2: Send message
       console.log(`💬 Sending message to conversation ${convId}...`);
       const response = await fetch(
-        `https://llm-safety-testing.onrender.com/api/conversations/${convId}/send`,
+        `https://medical-llm-backend-production.up.railway.app/api/conversations/${convId}/send`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -113,7 +113,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `https://llm-safety-testing.onrender.com/api/conversations/${conversationId}/score`,
+        `https://medical-llm-backend-production.up.railway.app/api/conversations/${conversationId}/score`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -138,7 +138,7 @@ function App() {
 
       // ⭐ fetch final summary from backend
       const summaryResponse = await fetch(
-        `https://llm-safety-testing.onrender.com/api/conversations/${conversationId}/final-summary`
+        `https://medical-llm-backend-production.up.railway.app/api/conversations/${conversationId}/final-summary`
       );
       const summaryData = await summaryResponse.json();
       setFinalSummary(summaryData);
@@ -155,7 +155,7 @@ function App() {
   const loadScores = async (convId) => {
     try {
       const response = await fetch(
-        `https://llm-safety-testing.onrender.com/api/conversations/${convId}/history`
+        `https://medical-llm-backend-production.up.railway.app/api/conversations/${convId}/history`
       );
       const data = await response.json();
 
