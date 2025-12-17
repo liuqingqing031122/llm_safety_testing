@@ -312,9 +312,9 @@ function App() {
                 previous question).
               </li>
               <li>
-                System will automatically run 25 times per model for stability
+                System will automatically run 5 times per model for stability
                 (or 1 time for conversational prompts). Each model might take
-                about 8-12 minutes to generate responses, please wait patiently.
+                about 2-5 minutes to generate responses, please wait patiently.
               </li>
             </ul>
           </div>
