@@ -309,12 +309,14 @@ function App() {
               <li>
                 Please click 'New Conversation' every time you ask a new
                 question (or keep asking if you want to follow up on the
-                previous question).
+                previous question, and the system will automatically change into
+                conversational mode).
               </li>
               <li>
                 System will automatically run 5 times per model for stability
                 (or 1 time for conversational prompts). Each model might take
                 about 2-5 minutes to generate responses, please wait patiently.
+                NOTE: GPT-5 might take up to 10 minutes to run.
               </li>
             </ul>
           </div>
