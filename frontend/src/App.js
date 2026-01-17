@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./App.css";
 import ScoreChart from "./ScoreChart";
+import References from "./References";
 
 function App() {
   const [message, setMessage] = useState("");
@@ -248,7 +249,31 @@ function App() {
         {/* Message Input Form */}
         <form className="message-form" onSubmit={sendMessage}>
           <h2>Send Message</h2>
-
+          <References />
+          <div className="notice-box">
+            <div className="notice-header">
+              <span className="notice-icon">⚠️</span>
+              <span>IMPORTANT NOTICE</span>
+            </div>
+            <ul className="notice-content">
+              <li>
+                Please click 'New Conversation' every time you ask a new
+                question (or keep asking if you want to follow up on the
+                previous question).
+              </li>
+              <li>
+                <span style={{ display: "block" }}>
+                  System will automatically run 5 times per model for stability
+                  (or 1 time for conversational prompts). Each model might take
+                  about 2-5 minutes to generate responses, please wait
+                  patiently.
+                  <br />
+                  <strong>NOTE:</strong> GPT-5 might take up to 10 minutes to
+                  run.
+                </span>
+              </li>
+            </ul>
+          </div>
           <div className="form-group">
             <label className="form-label">Your Message:</label>
             <textarea
@@ -299,25 +324,6 @@ function App() {
           >
             {isLoading ? "⏳ Generating..." : "📤 Send Message"}
           </button>
-
-          <div className="notice-box">
-            <div className="notice-header">
-              <span className="notice-icon">⚠️</span>
-              <span>IMPORTANT NOTICE</span>
-            </div>
-            <ul className="notice-content">
-              <li>
-                Please click 'New Conversation' every time you ask a new
-                question (or keep asking if you want to follow up on the
-                previous question).
-              </li>
-              <li>
-                System will automatically run 25 times per model for stability
-                (or 1 time for conversational prompts). This will take quite a
-                long time, please wait patiently.
-              </li>
-            </ul>
-          </div>
         </form>
 
         {/* Conversation History */}

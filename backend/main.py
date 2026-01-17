@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 load_dotenv()
 from models.llm_client import LLMClient
 from models.prompt_detector import PromptTypeDetector
+from models.references_routes import router as reference_router, set_reference_loader
+from models.reference_loader import ReferenceLoader
 
 app = FastAPI()
 
@@ -28,7 +30,10 @@ app.add_middleware(
 init_db()
 llm_client = LLMClient()
 prompt_detector = PromptTypeDetector()
+reference_loader = ReferenceLoader()
 
+set_reference_loader(reference_loader)
+app.include_router(reference_router)
 
 # Pydantic models
 class ConversationCreate(BaseModel):
@@ -510,7 +515,6 @@ async def get_final_summary(conversation_id: int, db: Session = Depends(get_db))
         "recommended_models": recommended,
         "max_score": max_score,
     }
-
 
 
 if __name__ == "__main__":

@@ -1,0 +1,267 @@
+.references-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  margin: 20px 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.references-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.references-header:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.references-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.references-title .icon {
+  font-size: 24px;
+}
+
+.references-title .title-text {
+  font-size: 1.2rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.expand-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.expand-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.references-content {
+  background: white;
+  padding: 32px 24px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.references-grid {
+  display: grid;
+  gap: 24px;
+}
+
+.reference-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.reference-card h3 {
+  margin: 0 0 20px 0;
+  color: #495057;
+  font-size: 20px;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 8px;
+}
+
+.reference-item {
+  margin-bottom: 24px;
+}
+
+.reference-item:last-child {
+  margin-bottom: 0;
+}
+
+.reference-item h4 {
+  margin: 0 0 8px 0;
+  color: #343a40;
+  font-size: 16px;
+}
+
+.reference-description {
+  color: #6c757d;
+  font-size: 14px;
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+}
+
+.reference-details {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.reference-details li {
+  padding: 6px 0;
+  color: #495057;
+  font-size: 14px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.reference-details li:last-child {
+  border-bottom: none;
+}
+
+.reference-details strong {
+  display: inline-block;
+  min-width: 100px;
+  color: #343a40;
+}
+
+.reference-details a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.reference-details a:hover {
+  text-decoration: underline;
+}
+
+.methodology-box {
+  background: white;
+  border-left: 4px solid #667eea;
+  padding: 16px;
+  margin-top: 16px;
+  border-radius: 4px;
+}
+
+.methodology-box h4 {
+  margin: 0 0 12px 0;
+  color: #343a40;
+  font-size: 15px;
+}
+
+.methodology-box ol {
+  margin: 0;
+  padding-left: 20px;
+  color: #495057;
+}
+
+.methodology-box li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.methodology-box li:last-child {
+  margin-bottom: 0;
+}
+
+.limitations-card {
+  background: #fff3cd;
+  border-color: #ffc107;
+}
+
+.limitation-section {
+  margin-bottom: 16px;
+}
+
+.limitation-section h4 {
+  margin: 0 0 8px 0;
+  color: #343a40;
+  font-size: 15px;
+}
+
+.limitation-section ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #495057;
+}
+
+.limitation-section li {
+  margin-bottom: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.disclaimer {
+  background: white;
+  border: 2px solid #ffc107;
+  border-radius: 6px;
+  padding: 16px;
+  margin-top: 16px;
+  color: #495057;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.disclaimer strong {
+  color: #343a40;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.update-card {
+  background: #e7f3ff;
+  border-color: #0d6efd;
+}
+
+.update-card p {
+  margin: 8px 0;
+  color: #495057;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.update-card strong {
+  color: #343a40;
+}
+
+.update-note {
+  background: white;
+  border-left: 3px solid #0d6efd;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 4px;
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .references-header {
+    padding: 14px 16px;
+  }
+
+  .references-title .title-text {
+    font-size: 12px;
+  }
+
+  .references-content {
+    padding: 20px 16px;
+  }
+
+  .reference-card {
+    padding: 16px;
+  }
+
+  .reference-details strong {
+    min-width: 80px;
+    font-size: 13px;
+  }
+}

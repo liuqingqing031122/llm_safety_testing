@@ -898,6 +898,7 @@ button:hover:not(:disabled) {
   border-radius: 12px;
   padding: 1.5rem;
   margin-top: 1rem;
+  margin-bottom: 20px;
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
   animation: pulse-border 2s ease-in-out infinite;
 }
