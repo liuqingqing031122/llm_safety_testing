@@ -119,7 +119,7 @@ function App() {
       if (!convId) {
         console.log("📝 Creating new conversation...");
         const createResponse = await fetch(
-          "http://localhost:8000/api/conversations",
+          "https://llmsafetytesting-production.up.railway.app/api/conversations",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -140,7 +140,7 @@ function App() {
       // ✨ Step 2: Send message
       console.log(`💬 Sending message to conversation ${convId}...`);
       const response = await fetch(
-        `http://localhost:8000/api/conversations/${convId}/send`,
+        `https://llmsafetytesting-production.up.railway.app/api/conversations/${convId}/send`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -205,7 +205,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/conversations/${conversationId}/score`,
+        `https://llmsafetytesting-production.up.railway.app/api/conversations/${conversationId}/score`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -224,7 +224,7 @@ function App() {
 
       // ⭐ fetch final summary from backend
       const summaryResponse = await fetch(
-        `http://localhost:8000/api/conversations/${conversationId}/final-summary`
+        `https://llmsafetytesting-production.up.railway.app/api/conversations/${conversationId}/final-summary`
       );
       const summaryData = await summaryResponse.json();
       setFinalSummary(summaryData);
@@ -256,7 +256,7 @@ function App() {
   const loadScores = async (convId) => {
     try {
       const response = await fetch(
-        `http://localhost:8000/api/conversations/${convId}/history`
+        `https://llmsafetytesting-production.up.railway.app/api/conversations/${convId}/history`
       );
       const data = await response.json();
 
