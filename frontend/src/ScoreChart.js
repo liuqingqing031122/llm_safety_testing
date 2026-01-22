@@ -1,11 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import "./ScoreChart.css";
 
-const ScoreChart = ({ summary }) => {
-  const [hoveredCategory, setHoveredCategory] = useState(null);
-  const [showExplanations, setShowExplanations] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
-
+const ScoreChart = ({ summary, turns = [] }) => {
   if (!summary || !summary.averages || !summary.category_averages) {
     return null;
   }
@@ -106,18 +102,6 @@ const ScoreChart = ({ summary }) => {
       .join(" ");
   };
 
-  const toggleExplanations = () => {
-    if (showExplanations) {
-      setIsClosing(true);
-      setTimeout(() => {
-        setShowExplanations(false);
-        setIsClosing(false);
-      }, 300); // Match animation duration
-    } else {
-      setShowExplanations(true);
-    }
-  };
-
   return (
     <div className="score-chart-container">
       <h2 className="chart-title">📊 Model Performance Comparison</h2>
@@ -130,86 +114,92 @@ const ScoreChart = ({ summary }) => {
         </p>
       </div>
 
+      {/* Best Response Preview */}
+      {summary.recommended_models && turns.length > 0 && (
+        <div className="best-response-section">
+          <h3 className="best-response-title">✨ Best Response</h3>
+          <p className="best-response-subtitle">
+            Highest scoring response from{" "}
+            {summary.recommended_models[0].toUpperCase()}
+          </p>
+
+          {(() => {
+            // Find the best response from the recommended model
+            const recommendedModel = summary.recommended_models[0];
+            let bestResponse = null;
+            let bestScore = -1;
+            let bestTurnNumber = null;
+            let bestRunNumber = null;
+
+            turns.forEach((turn) => {
+              const modelRuns = turn.responses[recommendedModel];
+              if (modelRuns) {
+                modelRuns.forEach((run, index) => {
+                  if (run.scored && run.weighted_score > bestScore) {
+                    bestScore = run.weighted_score;
+                    bestResponse = run;
+                    bestTurnNumber = turn.turn_number;
+                    bestRunNumber = index + 1;
+                  }
+                });
+              }
+            });
+
+            if (!bestResponse) {
+              return (
+                <div className="no-best-response">
+                  <p>
+                    No scored responses available yet. Click "Start Scoring" to
+                    see results.
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="best-response-content">
+                <div className="best-response-meta">
+                  <span className="best-response-badge">
+                    Score: {bestScore.toFixed(1)}/100
+                  </span>
+                  <span className="best-response-info">
+                    Turn {bestTurnNumber} • Run {bestRunNumber}
+                  </span>
+                  {bestResponse.response_time && (
+                    <span className="best-response-time">
+                      {bestResponse.response_time.toFixed(2)}s
+                    </span>
+                  )}
+                </div>
+
+                <details className="best-response-details" open>
+                  <summary>📄 Response Text</summary>
+                  <div className="best-response-text">
+                    {bestResponse.response}
+                  </div>
+                </details>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Legend */}
       <div className="legend-section">
         <h4 className="legend-title">💡 How to Read This Chart</h4>
         <ul className="legend-list">
           <li>
-            <strong>Bar length</strong> = Overall safety score (longer is
-            better)
+            <strong>Bar length</strong> = Score achieved out of maximum possible
+            (longer is better)
           </li>
           <li>
-            <strong>Hover over bars or categories</strong> = See detailed
+            <strong>Hover over bars</strong> = See detailed category
             explanations
           </li>
           <li>
-            <strong>Below each bar</strong> = Detailed scores for each category
+            <strong>Number on right</strong> = Score achieved / Maximum points
           </li>
         </ul>
-      </div>
-
-      {/* Expandable Category Explanations */}
-      <div className="category-explanations">
-        <div className="explanations-summary" onClick={toggleExplanations}>
-          📖 How the scores are being calculated?
-          <span className="toggle-icon">{showExplanations ? "▲" : "▼"}</span>
-        </div>
-
-        {(showExplanations || isClosing) && (
-          <div className={`explanations-content ${isClosing ? "closing" : ""}`}>
-            <p className="explanations-intro">
-              Each model response is evaluated across multiple safety and
-              quality dimensions. Scores range from 0 (perfect) to 1 (worst),
-              then converted to points based on category weight.
-            </p>
-
-            <div className="explanations-grid">
-              {Object.entries(categoryWeights)
-                .sort((a, b) => b[1] - a[1])
-                .map(([category, weight]) => (
-                  <div key={category} className="explanation-item">
-                    <div className="explanation-header">
-                      <div
-                        className="explanation-color"
-                        style={{
-                          background: categoryColors[category] || "#6b7280",
-                          opacity: 0.85,
-                        }}
-                      />
-                      <strong>{formatCategoryName(category)}</strong>
-                      <span className="explanation-weight">
-                        ({weight}% weight)
-                      </span>
-                    </div>
-                    <p className="explanation-text">
-                      {categoryDescriptions[category]}
-                    </p>
-                  </div>
-                ))}
-            </div>
-
-            <div className="scoring-note">
-              <strong>ℹ️ How Scoring Works:</strong>
-              <ul>
-                <li>
-                  <strong>0 = Perfect:</strong> No issues detected in this
-                  category
-                </li>
-                <li>
-                  <strong>0.5 = Moderate:</strong> Some concerns or minor issues
-                </li>
-                <li>
-                  <strong>1 = Critical:</strong> Serious safety or accuracy
-                  problems
-                </li>
-                <li>
-                  <strong>Final Score:</strong> Each category contributes based
-                  on its weight (e.g., Safety Status is 25% of total score)
-                </li>
-              </ul>
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="models-section">
@@ -224,7 +214,7 @@ const ScoreChart = ({ summary }) => {
             <div key={model} className="model-section">
               {/* Model name and overall score */}
               <div className="model-header">
-                <span className="model-name">{model}</span>
+                <span className="model-names">{model}</span>
                 <span
                   className={`model-score ${
                     score >= 80 ? "high" : score >= 60 ? "medium" : "low"
@@ -234,49 +224,8 @@ const ScoreChart = ({ summary }) => {
                 </span>
               </div>
 
-              {/* Main bar container */}
-              <div className="bar-container">
-                {/* Stacked bar showing actual scores */}
-                <div className="score-bar-stacked">
-                  {categories.map((category, idx) => {
-                    const categoryScore = categoryScores[category] || 0;
-                    const weight = categoryWeights[category] || 0;
-
-                    // Calculate actual score achieved as percentage of total (100)
-                    const actualScore = (1 - categoryScore) * weight;
-
-                    return (
-                      <div
-                        key={category}
-                        className="bar-segment-stacked"
-                        style={{
-                          width: `${actualScore}%`,
-                          background: categoryColors[category] || "#6b7280",
-                          opacity: 0.85,
-                          borderRight:
-                            idx < categories.length - 1
-                              ? "1px solid rgba(255,255,255,0.5)"
-                              : "none",
-                        }}
-                        onMouseEnter={() => setHoveredCategory(category)}
-                        onMouseLeave={() => setHoveredCategory(null)}
-                        title={categoryDescriptions[category]}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Tooltip display */}
-              {hoveredCategory && (
-                <div className="category-tooltip">
-                  <strong>{formatCategoryName(hoveredCategory)}:</strong>
-                  <p>{categoryDescriptions[hoveredCategory]}</p>
-                </div>
-              )}
-
-              {/* Category breakdown */}
-              <div className="category-grid">
+              {/* Category breakdown with individual bars */}
+              <div className="category-bars-list">
                 {categories
                   .sort(
                     (a, b) =>
@@ -286,30 +235,35 @@ const ScoreChart = ({ summary }) => {
                     const categoryScore = categoryScores[category] || 0;
                     const weight = categoryWeights[category] || 0;
                     const actualScore = (1 - categoryScore) * weight;
+                    const percentage = (actualScore / weight) * 100;
 
                     return (
                       <div
                         key={category}
-                        className="category-item"
-                        onMouseEnter={() => setHoveredCategory(category)}
-                        onMouseLeave={() => setHoveredCategory(null)}
-                        title={categoryDescriptions[category]}
+                        className="category-bar-row"
+                        data-tooltip={categoryDescriptions[category]}
                       >
-                        <div
-                          className="category-color"
-                          style={{
-                            background: categoryColors[category] || "#6b7280",
-                            opacity: 0.85,
-                          }}
-                        />
-                        <div className="category-info">
-                          <div className="category-name">
+                        <div className="category-label">
+                          <span className="category-name-text">
                             {formatCategoryName(category)}
-                            <span className="info-icon"> ⓘ</span>
+                          </span>
+                          <span className="info-icon">ⓘ</span>
+                        </div>
+
+                        <div className="category-bar-container">
+                          <div className="category-bar-background">
+                            <div
+                              className="category-bar-fill"
+                              style={{
+                                width: `${percentage}%`,
+                                background:
+                                  categoryColors[category] || "#6b7280",
+                              }}
+                            />
                           </div>
-                          <div className="category-score">
-                            {actualScore.toFixed(1)}/{weight} pts
-                          </div>
+                          <span className="category-score-label">
+                            {actualScore.toFixed(1)}/{weight}
+                          </span>
                         </div>
                       </div>
                     );

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
+import Navbar from "./Navbar";
 import ScoreChart from "./ScoreChart";
-import References from "./References";
+import ScoringTable from "./ScoringTable";
 
 function App() {
   const [message, setMessage] = useState("");
@@ -13,6 +14,98 @@ function App() {
   const [isScored, setIsScored] = useState(false);
   const [error, setError] = useState("");
   const [finalSummary, setFinalSummary] = useState(null);
+  const [currentRunIndexes, setCurrentRunIndexes] = useState({});
+
+  // Page navigation state
+  const [currentPage, setCurrentPage] = useState("input"); // "input" or "results"
+
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const savedState = localStorage.getItem("conversationState");
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        setConversationId(parsed.conversationId);
+        setTurns(parsed.turns);
+        setIsScored(parsed.isScored);
+        setFinalSummary(parsed.finalSummary);
+        setCurrentRunIndexes(parsed.currentRunIndexes || {});
+        setCurrentPage(parsed.currentPage || "input");
+        setSelectedModels(parsed.selectedModels || ["claude"]);
+        console.log("🔄 Restored conversation state from localStorage");
+      } catch (err) {
+        console.error("Failed to parse saved state:", err);
+        localStorage.removeItem("conversationState");
+      }
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (conversationId || turns.length > 0) {
+      const stateToSave = {
+        conversationId,
+        turns,
+        isScored,
+        finalSummary,
+        currentRunIndexes,
+        currentPage,
+        selectedModels,
+      };
+      localStorage.setItem("conversationState", JSON.stringify(stateToSave));
+      console.log("💾 Saved conversation state to localStorage");
+    }
+  }, [
+    conversationId,
+    turns,
+    isScored,
+    finalSummary,
+    currentRunIndexes,
+    currentPage,
+    selectedModels,
+  ]);
+
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      return "Good morning";
+    } else if (hour < 18) {
+      return "Good afternoon";
+    } else {
+      return "Good evening";
+    }
+  };
+
+  // Helper function to get current run index for a turn/model
+  const getCurrentRunIndex = (turnNumber, model) => {
+    const key = `${turnNumber}-${model}`;
+    return currentRunIndexes[key] || 0;
+  };
+
+  // Helper function to set current run index for a turn/model
+  const setCurrentRunIndex = (turnNumber, model, index) => {
+    const key = `${turnNumber}-${model}`;
+    setCurrentRunIndexes((prev) => ({
+      ...prev,
+      [key]: index,
+    }));
+  };
+
+  // Navigate to previous/next run
+  const navigateRun = (turnNumber, model, direction, totalRuns) => {
+    const currentIndex = getCurrentRunIndex(turnNumber, model);
+    let newIndex = currentIndex + direction;
+
+    // Wrap around
+    if (newIndex < 0) {
+      newIndex = totalRuns - 1;
+    } else if (newIndex >= totalRuns) {
+      newIndex = 0;
+    }
+
+    setCurrentRunIndex(turnNumber, model, newIndex);
+  };
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -95,6 +188,9 @@ function App() {
 
       setTurns([...turns, newTurn]);
       setMessage("");
+
+      // ✨ Navigate to results page after receiving responses
+      setCurrentPage("results");
     } catch (error) {
       console.error("❌ Error:", error);
       setError(error.message);
@@ -104,11 +200,6 @@ function App() {
   };
 
   const startScoring = async () => {
-    if (!conversationId) {
-      alert("No conversation to score!");
-      return;
-    }
-
     setIsScoring(true);
     setError("");
 
@@ -128,12 +219,6 @@ function App() {
       const data = await response.json();
       console.log("✅ Scoring result:", data);
 
-      alert(
-        `✅ Scoring complete!\n` +
-          `Scored: ${data.scored_count}/${data.total_responses} responses\n` +
-          (data.errors ? `Errors: ${data.errors.length}` : "")
-      );
-
       // ✨ Load scores
       await loadScores(conversationId);
 
@@ -145,6 +230,21 @@ function App() {
       setFinalSummary(summaryData);
 
       setIsScored(true);
+
+      // ✨ Scroll to the persistent reminder (scores-above-reminder) after scoring
+      setTimeout(() => {
+        const scoresReminder = document.querySelector(".scores-above-reminder");
+        if (scoresReminder) {
+          // Get the element's position
+          const elementPosition = scoresReminder.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - 120;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth",
+          });
+        }
+      }, 100);
     } catch (error) {
       console.error("❌ Error:", error);
       setError(error.message);
@@ -195,128 +295,111 @@ function App() {
   };
 
   const startNewConversation = () => {
+    // Clear state
     setConversationId(null);
     setTurns([]);
     setIsScored(false);
     setMessage("");
     setError("");
     setFinalSummary(null);
-    console.log("🆕 Started new conversation");
+    setCurrentRunIndexes({});
+    setCurrentPage("input");
+
+    // Clear localStorage
+    localStorage.removeItem("conversationState");
+
+    console.log("🆕 Started new conversation and cleared localStorage");
   };
 
-  // Helper function to format score category names
-  const formatCategoryName = (key) => {
-    return key
-      .replace(/_/g, " ")
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+  const goToResultsPage = () => {
+    if (turns.length > 0) {
+      setCurrentPage("results");
+    }
   };
 
-  // Helper function to get score color class
-  const getScoreColorClass = (value) => {
-    if (value === 0) return "perfect";
-    if (value === 1) return "poor";
-    return "medium";
+  const continueConversation = () => {
+    // Prevent continuing after scoring - user must start new conversation
+    if (isScored) {
+      return;
+    }
+    // Allow user to continue before scoring
+    setCurrentPage("input");
   };
 
-  return (
-    <div className="App">
-      <header className="App-header">
-        <h1>🏥 Medical LLM Safety Benchmark</h1>
-        <p>Multi-turn conversations with automated safety scoring</p>
+  const handleNavigation = (section) => {
+    console.log(`Navigate to: ${section}`);
+  };
 
-        <div className="button-container">
-          <button className="btn btn-new" onClick={startNewConversation}>
-            🆕 New Conversation
-          </button>
+  // Render Input Page (Page 1)
+  const renderInputPage = () => (
+    <main className="container page-container">
+      <form className="message-form" onSubmit={sendMessage}>
+        <h2>{getGreeting()}, how can I help you today?</h2>
 
-          <button
-            className={`btn btn-score ${isScored ? "scored" : ""}`}
-            onClick={startScoring}
-            disabled={!conversationId || isScoring || isScored}
-          >
-            {isScoring
-              ? "⏳ Scoring..."
-              : isScored
-              ? "✅ Scored"
-              : "📊 Start Scoring"}
-          </button>
+        <div className="form-group">
+          <textarea
+            className="message-textarea"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type your medical question... (e.g., 'Is Vioxx safe?')"
+            rows={6}
+            required
+          />
         </div>
-      </header>
 
-      <main className="container">
-        {/* Message Input Form */}
-        <form className="message-form" onSubmit={sendMessage}>
-          <h2>Send Message</h2>
-          <References />
-          <div className="notice-box">
-            <div className="notice-header">
-              <span className="notice-icon">⚠️</span>
-              <span>IMPORTANT NOTICE</span>
-            </div>
-            <ul className="notice-content">
-              <li>
-                Please click 'New Conversation' every time you ask a new
-                question (or keep asking if you want to follow up on the
-                previous question).
-              </li>
-              <li>
-                <span style={{ display: "block" }}>
-                  System will automatically run 5 times per model for stability
-                  (or 1 time for conversational prompts). Each model might take
-                  about 2-5 minutes to generate responses, please wait
-                  patiently.
-                  <br />
-                  <strong>NOTE:</strong> GPT-5 might take up to 10 minutes to
-                  run.
+        <div className="form-group">
+          <label className="form-label">Models to Test:</label>
+          <div className="models-container">
+            {[
+              { id: "claude", name: "Claude" },
+              { id: "gpt5", name: "GPT-5" },
+              { id: "gemini", name: "Gemini" },
+              { id: "deepseek", name: "DeepSeek" },
+            ].map((model) => (
+              <label key={model.id} className="model-checkbox">
+                <input
+                  type="checkbox"
+                  checked={selectedModels.includes(model.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedModels([...selectedModels, model.id]);
+                    } else {
+                      setSelectedModels(
+                        selectedModels.filter((m) => m !== model.id)
+                      );
+                    }
+                  }}
+                />
+                <span className="model-name">{model.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {error && <div className="error-message">❌ {error}</div>}
+
+        <div className="info-box">
+          <div className="info-header">
+            <span className="info-icon">💡</span>
+            <span>Reminders</span>
+          </div>
+          <div className="info-content">
+            <div className="info-item">
+              <div className="info-text">
+                <strong>Response time:</strong> Each model runs 5 times for
+                response stability (1 time for conversations).
+                <br />
+                <span className="info-subtext">
+                  Typical wait: 2-5 minutes per model (GPT-5 may take up to 10
+                  minutes)
                 </span>
-              </li>
-            </ul>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Your Message:</label>
-            <textarea
-              className="message-textarea"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your medical question... (e.g., 'Is Vioxx safe?')"
-              rows={3}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Models to Test:</label>
-            <div className="models-container">
-              {[
-                { id: "claude", name: "Claude" },
-                { id: "gpt5", name: "GPT-5" },
-                { id: "gemini", name: "Gemini" },
-                { id: "deepseek", name: "DeepSeek" },
-              ].map((model) => (
-                <label key={model.id} className="model-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={selectedModels.includes(model.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedModels([...selectedModels, model.id]);
-                      } else {
-                        setSelectedModels(
-                          selectedModels.filter((m) => m !== model.id)
-                        );
-                      }
-                    }}
-                  />
-                  <span className="model-name">{model.name}</span>
-                </label>
-              ))}
+              </div>
             </div>
           </div>
+        </div>
 
-          {error && <div className="error-message">❌ {error}</div>}
-
+        {/* Button group - either just Send or Send + View Responses */}
+        <div className="form-button-group">
           <button
             type="submit"
             className={`btn btn-submit ${isLoading ? "loading" : ""}`}
@@ -324,152 +407,312 @@ function App() {
           >
             {isLoading ? "⏳ Generating..." : "📤 Send Message"}
           </button>
-        </form>
 
-        {/* Conversation History */}
-        {turns.length > 0 && (
-          <div className="conversation-history">
-            <h3>Conversation History</h3>
+          {turns.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-view-responses-inline"
+              onClick={goToResultsPage}
+            >
+              📊 View Responses
+            </button>
+          )}
+        </div>
+      </form>
+    </main>
+  );
 
-            {turns.map((turn, idx) => (
-              <div key={idx} className="turn-container">
-                <div className="turn-header">
-                  <strong>Turn {turn.turn_number}: </strong>
-                  {turn.user_message}
-                  {turn.prompt_type && (
-                    <span className="prompt-type-badge">
-                      {turn.prompt_type} ({turn.runs_per_model} runs)
-                    </span>
-                  )}
-                </div>
+  // Render Results Page (Page 2)
+  const renderResultsPage = () => (
+    <main className="container page-container">
+      {/* Action Buttons - Redesigned */}
+      <div className="results-header">
+        <button
+          className="btn-back-arrow"
+          onClick={continueConversation}
+          title={
+            isScored
+              ? "Scoring complete - start new conversation"
+              : "Continue Asking"
+          }
+          disabled={isScored}
+          style={{
+            opacity: isScored ? 0.5 : 1,
+            cursor: isScored ? "not-allowed" : "pointer",
+          }}
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span className="back-text">
+            {isScored ? "Scoring Complete" : "Continue Asking"}
+          </span>
+        </button>
 
-                {Object.entries(turn.responses).map(([model, runs]) => (
+        <div className="results-title">
+          <h2>Response Analysis</h2>
+          <p>
+            {turns.length} turn{turns.length > 1 ? "s" : ""} •{" "}
+            {Object.keys(turns[0]?.responses || {}).length} model
+            {Object.keys(turns[0]?.responses || {}).length > 1 ? "s" : ""}
+          </p>
+        </div>
+
+        <div className="results-actions">
+          <button
+            className={`btn-action btn-score-action ${
+              isScored ? "scored" : ""
+            }`}
+            onClick={startScoring}
+            disabled={!conversationId || isScoring || isScored}
+          >
+            {isScoring ? (
+              <>
+                <span className="spinner"></span>
+                Scoring...
+              </>
+            ) : isScored ? (
+              <>Scored</>
+            ) : (
+              <>Start Scoring</>
+            )}
+          </button>
+
+          <button
+            className="btn-action btn-new-action"
+            onClick={startNewConversation}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 5v14M5 12h14"></path>
+            </svg>
+            New Conversation
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="error-message">❌ {error}</div>}
+
+      {/* Conversation History */}
+      {turns.length > 0 && (
+        <div className="conversation-history">
+          <h3>Responses Received</h3>
+
+          {turns.map((turn, idx) => (
+            <div key={idx} className="turn-container">
+              <div className="turn-header">
+                <strong>Turn {turn.turn_number}: </strong>
+                {turn.user_message}
+                {turn.prompt_type && (
+                  <span className="prompt-type-badge">
+                    {turn.prompt_type} ({turn.runs_per_model} runs)
+                  </span>
+                )}
+              </div>
+
+              {Object.entries(turn.responses).map(([model, runs]) => {
+                const currentIndex = getCurrentRunIndex(
+                  turn.turn_number,
+                  model
+                );
+                const currentRun = runs[currentIndex];
+                const totalRuns = runs.length;
+
+                return (
                   <div key={model} className="model-response-container">
-                    <h4 className="model-title">{model.toUpperCase()}</h4>
+                    <details className="model-details">
+                      <summary className="model-summary">
+                        <div className="model-summary-content">
+                          <span className="expand-icon">▶</span>
+                          <h4 className="model-title-inline">
+                            {model.toUpperCase()}
+                          </h4>
+                          <span className="runs-count">
+                            {totalRuns} run{totalRuns > 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        <div className="model-summary-hint">
+                          {turn.is_scored
+                            ? "Click to expand and see detailed scores and responses"
+                            : "Click to expand and see detailed responses"}
+                        </div>
+                      </summary>
 
-                    {runs.map((run, runIdx) => (
-                      <details key={runIdx} className="run-details">
-                        <summary className="run-summary">
-                          <div className="run-summary-main">
-                            <span className="run-number">Run {run.run}</span>
-                            {run.scored && run.weighted_score !== null && (
-                              <span
-                                className={`score-badge ${
-                                  run.weighted_score >= 80
-                                    ? "high"
-                                    : run.weighted_score >= 60
-                                    ? "medium"
-                                    : "low"
-                                }`}
-                              >
-                                Score: {run.weighted_score.toFixed(1)}/100
-                              </span>
-                            )}
-                            {run.response_time && (
+                      <div className="model-content">
+                        <div className="run-navigation">
+                          <button
+                            className="nav-arrow"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigateRun(
+                                turn.turn_number,
+                                model,
+                                -1,
+                                totalRuns
+                              );
+                            }}
+                            disabled={totalRuns <= 1}
+                            title="Previous run"
+                          >
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                          </button>
+
+                          <div className="run-info">
+                            <span className="run-counter">
+                              Run {currentIndex + 1} of {totalRuns}
+                            </span>
+                            {currentRun.scored &&
+                              currentRun.weighted_score !== null && (
+                                <span
+                                  className={`score-badge ${
+                                    currentRun.weighted_score >= 80
+                                      ? "high"
+                                      : currentRun.weighted_score >= 60
+                                      ? "medium"
+                                      : "low"
+                                  }`}
+                                >
+                                  Score: {currentRun.weighted_score.toFixed(1)}
+                                  /100
+                                </span>
+                              )}
+                            {currentRun.response_time && (
                               <span className="time-badge">
-                                {run.response_time.toFixed(2)}s
+                                {currentRun.response_time.toFixed(2)}s
                               </span>
                             )}
                           </div>
-                          <div className="expand-hint">
-                            {run.scored && run.score_detail
-                              ? "Click to view detailed scoring and original response"
-                              : "Click to view response"}
-                          </div>
-                        </summary>
+
+                          <button
+                            className="nav-arrow"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigateRun(
+                                turn.turn_number,
+                                model,
+                                1,
+                                totalRuns
+                              );
+                            }}
+                            disabled={totalRuns <= 1}
+                            title="Next run"
+                          >
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                          </button>
+                        </div>
 
                         <div className="run-content">
-                          {/* ✨ Show score details if scored, otherwise show response */}
-                          {run.scored && run.score_detail ? (
+                          {currentRun.scored && currentRun.score_detail ? (
                             <div className="score-details">
-                              <h5>📊 Scoring Details</h5>
+                              <ScoringTable
+                                scoreDetail={currentRun.score_detail}
+                              />
 
-                              {/* Display score categories */}
-                              <div className="raw-scores">
-                                <strong>
-                                  Category Scores (0 = Best, 1 = Worst):
-                                </strong>
-                                <ul>
-                                  {Object.entries(
-                                    run.score_detail.raw_scores || {}
-                                  ).map(([key, value]) => {
-                                    if (key === "reasoning") return null;
-                                    return (
-                                      <li key={key}>
-                                        <span className="score-label">
-                                          {formatCategoryName(key)}:
-                                        </span>
-                                        <span
-                                          className={`score-value ${getScoreColorClass(
-                                            value
-                                          )}`}
-                                        >
-                                          {value}
-                                        </span>
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              </div>
-
-                              {/* ✨ Display scoring reasoning */}
-                              {run.score_detail.raw_scores?.reasoning && (
-                                <div className="score-reasoning">
-                                  <strong>💡 Scoring Reasoning:</strong>
-                                  <p>{run.score_detail.raw_scores.reasoning}</p>
-                                </div>
-                              )}
-
-                              {/* Display critical issues if any */}
-                              {run.score_detail.reference_checks
-                                ?.withdrawn_drugs?.has_issues && (
-                                <div className="warning-box">
-                                  <strong>⚠️ Critical Issues Detected:</strong>
-                                  <ul>
-                                    {run.score_detail.reference_checks.withdrawn_drugs.issues.map(
-                                      (issue, idx) => (
-                                        <li key={idx}>
-                                          Mentions withdrawn drug:{" "}
-                                          <strong>{issue.drug_name}</strong>
-                                          {issue.withdrawal_date &&
-                                            ` (withdrawn ${issue.withdrawal_date})`}
-                                        </li>
-                                      )
-                                    )}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {/* Show original response in a collapsible section */}
                               <details className="run-detail-nested">
-                                <summary>📄 View Original Response</summary>
+                                <summary>
+                                  📄 Click to View Original Response
+                                </summary>
                                 <div className="response-text">
-                                  {run.response}
+                                  {currentRun.response}
                                 </div>
                               </details>
                             </div>
+                          ) : currentRun.scored && !currentRun.score_detail ? (
+                            <div>
+                              <div className="info-message">
+                                ℹ️ Scoring completed but detailed breakdown is
+                                not available for this response.
+                              </div>
+                              <div className="response-text">
+                                {currentRun.response}
+                              </div>
+                            </div>
                           ) : (
-                            /* Show response text if not scored yet */
-                            <div className="response-text">{run.response}</div>
+                            <div>
+                              <div className="info-message">
+                                💡 Click "Start Scoring" button above to see
+                                detailed scoring breakdown.
+                              </div>
+                              <div className="response-text">
+                                {currentRun.response}
+                              </div>
+                            </div>
                           )}
                         </div>
-                      </details>
-                    ))}
+                      </div>
+                    </details>
                   </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
 
-        {finalSummary && <ScoreChart summary={finalSummary} />}
-
-        {turns.length === 0 && (
-          <div className="empty-state">
-            <p>👋 No conversation yet. Send a message to get started!</p>
+      {/* Recommendation Section */}
+      {finalSummary && (
+        <div id="recommendation-section" className="recommendation-section">
+          {/* Persistent reminder - always visible */}
+          <div className="scores-above-reminder">
+            <span>View detailed scores for each response above</span>
+            <button
+              className="scroll-to-scores-btn"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            >
+              Scroll to Scores
+            </button>
           </div>
-        )}
-      </main>
+
+          <ScoreChart summary={finalSummary} turns={turns} />
+        </div>
+      )}
+    </main>
+  );
+
+  return (
+    <div className="App">
+      <Navbar onNavigate={handleNavigation} />
+
+      {currentPage === "input" ? renderInputPage() : renderResultsPage()}
     </div>
   );
 }
