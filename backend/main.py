@@ -20,7 +20,10 @@ app = FastAPI()
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",  # 本地开发
+        "*"  # 暂时允许所有来源（测试用，之后可以改成具体的 Netlify URL）
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -527,6 +530,8 @@ async def get_final_summary(conversation_id: int, db: Session = Depends(get_db))
 
 if __name__ == "__main__":
     import uvicorn
+    import os
     print("🚀 Starting Medical LLM Benchmark API...")
-    print("📍 API docs: http://localhost:8000/docs")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))  # ✨ 从环境变量读取端口
+    print(f"📍 API docs: http://0.0.0.0:{port}/docs")
+    uvicorn.run(app, host="0.0.0.0", port=port)
