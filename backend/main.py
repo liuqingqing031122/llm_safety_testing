@@ -17,17 +17,20 @@ from models.reference_loader import ReferenceLoader
 
 app = FastAPI()
 
-# CORS
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",  # 本地开发
-        "*"  # 暂时允许所有来源（测试用，之后可以改成具体的 Netlify URL）
+        "http://localhost:3000",
+        "https://final-user-testing.netlify.app",
+        "https://697248f4effbf0e0ad0f533e--final-user-testing.netlify.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Initialize
 init_db()
