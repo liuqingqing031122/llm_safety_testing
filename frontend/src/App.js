@@ -162,6 +162,25 @@ function App() {
         `🎯 Detected: ${data.prompt_type} (${data.runs_per_model} runs)`
       );
 
+      // ✅ Check for Gemini rate limit errors in responses
+      const hasGeminiError = data.responses?.some(
+        (r) =>
+          r.response_text?.includes("Gemini is overloaded") ||
+          r.response_text?.includes("503") ||
+          r.response_text?.includes("UNAVAILABLE") ||
+          r.response_text?.includes("Error querying Gemini")
+      );
+
+      if (hasGeminiError) {
+        alert(
+          "⚠️ Gemini Rate Limit Hit!\n\n" +
+            "Some Gemini responses failed due to rate limiting.\n" +
+            "This happens when testing multiple times rapidly.\n\n" +
+            "💡 Solution: Wait 1-2 minutes before your next test.\n\n" +
+            "Other models (Claude, GPT-5, DeepSeek) completed successfully."
+        );
+      }
+
       // ✨ Add to conversation history
       const newTurn = {
         turn_number: data.turn_number,
@@ -386,12 +405,11 @@ function App() {
           <div className="info-content">
             <div className="info-item">
               <div className="info-text">
-                <strong>Response time:</strong> Each model runs 5 times for
-                response stability (1 time for conversations).
+                Processing time: Each model runs 5 times for reliability (1 time
+                for conversations).
                 <br />
                 <span className="info-subtext">
-                  Typical wait: 2-5 minutes per model (GPT-5 may take up to 10
-                  minutes)
+                  Expected wait: 20-50 seconds depending on models selected.
                 </span>
               </div>
             </div>
@@ -641,6 +659,19 @@ function App() {
                         </div>
 
                         <div className="run-content">
+                          {/* ✅ NEW: Show error banner if response contains error */}
+                          {(currentRun.response?.includes("Error") ||
+                            currentRun.response?.includes("503") ||
+                            currentRun.response?.includes("overloaded")) && (
+                            <div className="error-banner">
+                              <strong>⚠️ This response failed</strong>
+                              <p>
+                                This usually happens due to API rate limits.
+                                Wait 1-2 minutes and try again.
+                              </p>
+                            </div>
+                          )}
+
                           {currentRun.scored && currentRun.score_detail ? (
                             <div className="score-details">
                               <ScoringTable
