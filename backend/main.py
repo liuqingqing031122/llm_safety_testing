@@ -6,25 +6,26 @@ from sqlalchemy.orm import Session
 import asyncio
 from datetime import datetime
 import time
+from . import auth  # Import auth router
+from .auth import get_current_user_optional
+from .models import Base, User
 
-from models.database import init_db, get_db, Conversation, ConversationTurn, ModelResponse
+from .models.database import init_db, get_db, Conversation, ConversationTurn, ModelResponse, engine
 
 from dotenv import load_dotenv
 load_dotenv()
-from models.llm_client import LLMClient
-from models.prompt_detector import PromptTypeDetector
-from models.references_routes import router as reference_router, set_reference_loader
-from models.reference_loader import ReferenceLoader
+from .models.llm_client import LLMClient
+from .models.prompt_detector import PromptTypeDetector
+from .models.references_routes import router as reference_router, set_reference_loader
+from .models.reference_loader import ReferenceLoader
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://final-user-testing.netlify.app",
-        "https://697248f4effbf0e0ad0f533e--final-user-testing.netlify.app",
-    ],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,6 +40,7 @@ reference_loader = ReferenceLoader()
 
 set_reference_loader(reference_loader)
 app.include_router(reference_router)
+app.include_router(auth.router)
 
 # Pydantic models
 class ConversationCreate(BaseModel):
@@ -54,9 +56,15 @@ class SendMessageRequest(BaseModel):
 # ============================================================================
 
 @app.post("/api/conversations")
-async def create_conversation(request: ConversationCreate, db: Session = Depends(get_db)):
+async def create_conversation(
+    request: ConversationCreate, 
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional)  # ✅ Make optional
+):
     """Create a new conversation"""
-    conversation = Conversation()
+    conversation = Conversation(
+        user_id=current_user.id if current_user else None  # ✅ None if not logged in
+    )
     db.add(conversation)
     db.commit()
     db.refresh(conversation)
@@ -64,7 +72,8 @@ async def create_conversation(request: ConversationCreate, db: Session = Depends
     return {
         "conversation_id": conversation.id,
         "created_at": conversation.created_at.isoformat(),
-        "models": request.models
+        "models": request.models,
+        "user_id": conversation.user_id
     }
 
 
@@ -243,7 +252,7 @@ async def start_scoring(
     - Before: Sequential (5 min for 20 responses)
     - After: Parallel (30 sec for 20 responses)
     """
-    from models.scoring import MedicalResponseScorer
+    from .models.scoring import MedicalResponseScorer
     
     # Check conversation exists
     conversation = db.query(Conversation).filter(
@@ -570,6 +579,137 @@ async def get_final_summary(conversation_id: int, db: Session = Depends(get_db))
         "prompt_type": conversation.prompt_type
     }
 
+@app.get("/")
+def read_root():
+    return {"message": "Medical LLM Safety Benchmark API"}
+
+# Add this new endpoint in backend/main.py
+
+@app.get("/api/users/conversations")
+async def get_user_conversations(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(auth.get_current_user_dependency)
+):
+    """Get all conversations for the current user"""
+    conversations = db.query(Conversation).filter(
+        Conversation.user_id == current_user.id
+    ).order_by(Conversation.created_at.desc()).all()
+    
+    result = []
+    for conv in conversations:
+        # Get first turn to show preview
+        first_turn = db.query(ConversationTurn).filter(
+            ConversationTurn.conversation_id == conv.id
+        ).order_by(ConversationTurn.turn_number).first()
+        
+        # Count total turns
+        turn_count = db.query(ConversationTurn).filter(
+            ConversationTurn.conversation_id == conv.id
+        ).count()
+        
+        result.append({
+            "id": conv.id,
+            "created_at": conv.created_at.isoformat(),
+            "prompt_type": conv.prompt_type,
+            "runs_per_model": conv.runs_per_model,
+            "preview": first_turn.user_message if first_turn else "No messages",
+            "turn_count": turn_count
+        })
+    
+    return {
+        "conversations": result,
+        "total": len(result)
+    }
+
+@app.get("/api/conversations/{conversation_id}/full-details")
+async def get_conversation_full_details(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(auth.get_current_user_dependency)
+):
+    """Get full conversation details including history and summary"""
+    
+    # Verify this conversation belongs to the user
+    conversation = db.query(Conversation).filter(
+        Conversation.id == conversation_id,
+        Conversation.user_id == current_user.id
+    ).first()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    # Get conversation history
+    turns = db.query(ConversationTurn).filter(
+        ConversationTurn.conversation_id == conversation_id
+    ).order_by(ConversationTurn.turn_number).all()
+    
+    history = []
+    for turn in turns:
+        responses = db.query(ModelResponse).filter(
+            ModelResponse.conversation_turn_id == turn.id
+        ).all()
+        
+        history.append({
+            "turn_number": turn.turn_number,
+            "user_message": turn.user_message,
+            "timestamp": turn.timestamp.isoformat(),
+            "model_responses": [
+                {
+                    "id": r.id,
+                    "model_name": r.model_name,
+                    "response_text": r.response_text,
+                    "response_time": r.response_time,
+                    "scored": r.scored,
+                    "weighted_score": r.weighted_score,
+                    "score_data": r.score_data
+                }
+                for r in responses
+            ]
+        })
+    
+    # Get final summary if scored
+    final_summary = None
+    if any(r.scored for turn in turns for r in 
+           db.query(ModelResponse).filter(ModelResponse.conversation_turn_id == turn.id).all()):
+        
+        # Calculate summary (same logic as /final-summary endpoint)
+        responses = db.query(ModelResponse).join(ConversationTurn).filter(
+            ConversationTurn.conversation_id == conversation_id,
+            ModelResponse.scored == True
+        ).all()
+        
+        if responses:
+            model_scores = {}
+            for resp in responses:
+                model = resp.model_name
+                if model not in model_scores:
+                    model_scores[model] = []
+                if resp.weighted_score is not None:
+                    model_scores[model].append(resp.weighted_score)
+            
+            averages = {
+                model: round(sum(scores) / len(scores), 2)
+                for model, scores in model_scores.items()
+            }
+            
+            if averages:
+                max_score = max(averages.values())
+                recommended = [m for m, avg in averages.items() if avg == max_score]
+                
+                final_summary = {
+                    "averages": averages,
+                    "recommended_models": recommended,
+                    "max_score": max_score
+                }
+    
+    return {
+        "conversation_id": conversation_id,
+        "prompt_type": conversation.prompt_type,
+        "runs_per_model": conversation.runs_per_model,
+        "created_at": conversation.created_at.isoformat(),
+        "turns": history,
+        "final_summary": final_summary
+    }
 
 if __name__ == "__main__":
     import uvicorn

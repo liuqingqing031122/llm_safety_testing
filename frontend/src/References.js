@@ -1,24 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import "./References.css";
 
 function References() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch reference statistics from backend
-    fetch("http://localhost:8000/api/references/stats")
-      .then((res) => res.json())
-      .then((data) => {
-        setStats(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to load reference stats:", err);
-        setLoading(false);
-      });
-  }, []);
-
   return (
     <div className="references-section-static">
       {/* Title - Always Visible */}
@@ -27,13 +10,8 @@ function References() {
           🔐 Why You Can Trust Our Scores
         </h2>
         <p className="references-subtitle">
-          {loading
-            ? "Loading reference data..."
-            : `Our scoring system is backed by ${
-                stats?.withdrawn_drugs_count || "247"
-              } official drug records and ${
-                stats?.common_procedures_count || "156"
-              } medical procedures from authoritative sources.`}
+          Our scoring system is backed by 441 official drug records and 481
+          medical procedures from authoritative sources.
         </p>
       </div>
 
@@ -52,8 +30,7 @@ function References() {
               </p>
               <ul className="reference-details">
                 <li>
-                  <strong>Entries:</strong>{" "}
-                  {stats?.withdrawn_drugs_count || "Loading..."} drugs
+                  <strong>Entries:</strong> 441 drugs
                 </li>
                 <li>
                   <strong>Source:</strong> European Medicines Agency (EMA)
@@ -82,12 +59,10 @@ function References() {
               </p>
               <ul className="reference-details">
                 <li>
-                  <strong>Entries:</strong>{" "}
-                  {stats?.common_procedures_count || "Loading..."} procedures
+                  <strong>Entries:</strong> 481 procedures
                 </li>
                 <li>
-                  <strong>Categories:</strong>{" "}
-                  {stats?.procedure_categories || "7"} specialties (Cardiac,
+                  <strong>Categories:</strong> 7 specialties (Cardiac,
                   Orthopedic, GI, etc.)
                 </li>
                 <li>
@@ -123,16 +98,13 @@ function References() {
               </p>
               <ul className="reference-details">
                 <li>
-                  <strong>Direct Prompts:</strong>{" "}
-                  {stats?.direct_examples || "0"} examples
+                  <strong>Direct Prompts:</strong> 5 examples
                 </li>
                 <li>
-                  <strong>Indirect Prompts:</strong>{" "}
-                  {stats?.indirect_examples || "0"} examples
+                  <strong>Indirect Prompts:</strong> 5 examples
                 </li>
                 <li>
-                  <strong>Conversational:</strong>{" "}
-                  {stats?.conversational_examples || "0"} examples
+                  <strong>Conversational:</strong> 5 examples
                 </li>
                 <li>
                   <strong>Source:</strong> Human scoring safety annotations

@@ -168,31 +168,86 @@
   text-align: left;
 }
 
-/* ==================== Legend Section ==================== */
+/* ==================== Legend Section (Collapsible) ==================== */
 .legend-section {
-  background: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 10px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
   margin-bottom: 2rem;
-  border-left: 4px solid #667eea;
+  border: 2px solid #667eea;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+  transition: all 0.3s ease;
+}
+
+.legend-section:hover {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
 }
 
 .legend-title {
   color: #333;
   font-size: 1.1rem;
-  margin-bottom: 1rem;
+  font-weight: 600;
+  padding: 1.25rem 1.5rem;
+  margin: 0;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-title::-webkit-details-marker {
+  display: none;
+}
+
+.legend-title::before {
+  content: "▶";
+  display: inline-block;
+  transition: transform 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.legend-section[open] .legend-title::before {
+  transform: rotate(90deg);
+}
+
+.legend-title:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
 }
 
 .legend-list {
   list-style: none;
-  padding: 0;
+  padding: 1.5rem;
   margin: 0;
+  background: white;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .legend-list li {
-  padding: 0.5rem 0;
+  padding: 0.75rem 0;
   color: #555;
   font-size: 0.95rem;
+  line-height: 1.6;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.legend-list li:last-child {
+  border-bottom: none;
 }
 
 .legend-list strong {
@@ -357,34 +412,6 @@
   opacity: 1;
 }
 
-/* Custom instant tooltip */
-.category-bar-row::before {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 8px;
-  background: #333;
-  color: white;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  line-height: 1.4;
-  white-space: normal;
-  max-width: 400px;
-  width: max-content;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.05s ease;
-  z-index: 1000;
-}
-
-.category-bar-row:hover::before {
-  opacity: 1;
-}
-
 /* ==================== Category Bar Container ==================== */
 .category-bar-container {
   display: flex;
@@ -474,6 +501,15 @@
   .recommended-model {
     font-size: 1.4rem;
   }
+
+  .legend-list {
+    padding: 1rem;
+  }
+
+  .legend-title {
+    font-size: 1rem;
+    padding: 1rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -492,4 +528,17 @@
   .category-bar-background {
     height: 24px;
   }
+}
+
+/* ==================== Best Response Scoring Details ==================== */
+.best-response-scoring-details {
+  margin: 0.5rem 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  padding: 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
 }

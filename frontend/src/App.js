@@ -3,8 +3,11 @@ import "./App.css";
 import Navbar from "./Navbar";
 import ScoreChart from "./ScoreChart";
 import ScoringTable from "./ScoringTable";
+import { useAuth } from "./AuthContext";
 
 function App() {
+  const { token } = useAuth(); // Get auth token
+
   const [message, setMessage] = useState("");
   const [selectedModels, setSelectedModels] = useState(["claude"]);
   const [conversationId, setConversationId] = useState(null);
@@ -15,13 +18,28 @@ function App() {
   const [error, setError] = useState("");
   const [finalSummary, setFinalSummary] = useState(null);
   const [currentRunIndexes, setCurrentRunIndexes] = useState({});
+  const [showFloatingButton, setShowFloatingButton] = useState(false);
 
   // Page navigation state
   const [currentPage, setCurrentPage] = useState("input"); // "input" or "results"
 
-  // Load state from localStorage on mount
+  // Helper function to get headers with auth token
+  // In the getHeaders() function, check if token exists
+  const getHeaders = () => {
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      // ✅ Only add if token exists
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    return headers;
+  };
+
   useEffect(() => {
-    const savedState = localStorage.getItem("conversationState");
+    const savedState = sessionStorage.getItem("conversationState");
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
@@ -32,15 +50,15 @@ function App() {
         setCurrentRunIndexes(parsed.currentRunIndexes || {});
         setCurrentPage(parsed.currentPage || "input");
         setSelectedModels(parsed.selectedModels || ["claude"]);
-        console.log("🔄 Restored conversation state from localStorage");
+        console.log("🔄 Restored conversation state from sessionStorage");
       } catch (err) {
         console.error("Failed to parse saved state:", err);
-        localStorage.removeItem("conversationState");
+        sessionStorage.removeItem("conversationState");
       }
     }
   }, []);
 
-  // Save state to localStorage whenever it changes
+  // Save state to sessionStorage whenever it changes
   useEffect(() => {
     if (conversationId || turns.length > 0) {
       const stateToSave = {
@@ -52,8 +70,8 @@ function App() {
         currentPage,
         selectedModels,
       };
-      localStorage.setItem("conversationState", JSON.stringify(stateToSave));
-      console.log("💾 Saved conversation state to localStorage");
+      sessionStorage.setItem("conversationState", JSON.stringify(stateToSave));
+      console.log("💾 Saved conversation state to sessionStorage");
     }
   }, [
     conversationId,
@@ -64,6 +82,25 @@ function App() {
     currentPage,
     selectedModels,
   ]);
+
+  // Detect scroll to show/hide floating button
+  useEffect(() => {
+    const handleScroll = () => {
+      const resultsHeader = document.querySelector(".results-header");
+      if (resultsHeader) {
+        const rect = resultsHeader.getBoundingClientRect();
+        // If header is scrolled out of view, show floating button
+        setShowFloatingButton(rect.bottom < 0);
+      }
+    };
+
+    if (currentPage === "results") {
+      window.addEventListener("scroll", handleScroll);
+      // Check initial position
+      handleScroll();
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
+  }, [currentPage]);
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -122,7 +159,7 @@ function App() {
           "http://localhost:8000/api/conversations",
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: getHeaders(), // ← Use auth headers
             body: JSON.stringify({ models: selectedModels }),
           }
         );
@@ -143,7 +180,7 @@ function App() {
         `http://localhost:8000/api/conversations/${convId}/send`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getHeaders(), // ← Use auth headers
           body: JSON.stringify({
             message: message,
             models: selectedModels,
@@ -227,7 +264,7 @@ function App() {
         `http://localhost:8000/api/conversations/${conversationId}/score`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getHeaders(), // ← Use auth headers
         }
       );
 
@@ -243,7 +280,10 @@ function App() {
 
       // ⭐ fetch final summary from backend
       const summaryResponse = await fetch(
-        `http://localhost:8000/api/conversations/${conversationId}/final-summary`
+        `http://localhost:8000/api/conversations/${conversationId}/final-summary`,
+        {
+          headers: getHeaders(), // ← Use auth headers
+        }
       );
       const summaryData = await summaryResponse.json();
       setFinalSummary(summaryData);
@@ -275,7 +315,10 @@ function App() {
   const loadScores = async (convId) => {
     try {
       const response = await fetch(
-        `http://localhost:8000/api/conversations/${convId}/history`
+        `http://localhost:8000/api/conversations/${convId}/history`,
+        {
+          headers: getHeaders(), // ← Use auth headers
+        }
       );
       const data = await response.json();
 
@@ -324,10 +367,10 @@ function App() {
     setCurrentRunIndexes({});
     setCurrentPage("input");
 
-    // Clear localStorage
-    localStorage.removeItem("conversationState");
+    // Clear sessionStorage
+    sessionStorage.removeItem("conversationState");
 
-    console.log("🆕 Started new conversation and cleared localStorage");
+    console.log("🆕 Started new conversation and cleared sessionStorage");
   };
 
   const goToResultsPage = () => {
@@ -525,6 +568,25 @@ function App() {
           </button>
         </div>
       </div>
+
+      {/* Floating "New Conversation" button - only shows when scrolled */}
+      {showFloatingButton && (
+        <button className="btn-new-floating" onClick={startNewConversation}>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          New Conversation
+        </button>
+      )}
 
       {error && <div className="error-message">❌ {error}</div>}
 
@@ -727,9 +789,34 @@ function App() {
             <span>View detailed scores for each response above</span>
             <button
               className="scroll-to-scores-btn"
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              onClick={() => {
+                // Scroll to conversation history
+                const historyElement = document.querySelector(
+                  ".conversation-history"
+                );
+                if (historyElement) {
+                  const elementPosition =
+                    historyElement.getBoundingClientRect().top;
+                  const offsetPosition =
+                    elementPosition + window.pageYOffset - 100;
+
+                  window.scrollTo({
+                    top: offsetPosition,
+                    behavior: "smooth",
+                  });
+
+                  // Expand all model details after scrolling
+                  setTimeout(() => {
+                    const allDetails =
+                      document.querySelectorAll(".model-details");
+                    allDetails.forEach((details) => {
+                      details.open = true;
+                    });
+                  }, 500); // Wait for scroll to complete
+                }
+              }}
             >
-              Scroll to Scores
+              Click to See Detailed Scores
             </button>
           </div>
 

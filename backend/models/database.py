@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Text, Float, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
+from sqlalchemy.sql import func
 
 Base = declarative_base()
 
@@ -12,8 +13,11 @@ class Conversation(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     prompt_type = Column(String, default="indirect")  # direct, indirect, conversational
     runs_per_model = Column(Integer, default=5)  # ✨ 改为 5（原来是 25）
+    conversation_id = Column(String, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     # Relationships
+    user = relationship("User", back_populates="conversations")
     turns = relationship("ConversationTurn", back_populates="conversation", cascade="all, delete-orphan")
 
 
@@ -48,6 +52,18 @@ class ModelResponse(Base):
     
     # Relationships
     turn = relationship("ConversationTurn", back_populates="model_responses")
+
+class User(Base):
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationship to conversations
+    conversations = relationship("Conversation", back_populates="user")
 
 
 # Database setup

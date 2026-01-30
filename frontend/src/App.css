@@ -43,6 +43,38 @@
   border: 2px solid #f0f0f0;
 }
 
+.btn-new-floating {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 100;
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  border-radius: 10px;
+}
+
+.btn-new-floating:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-new-floating svg {
+  width: 20px;
+  height: 20px;
+}
+
 .btn-back-arrow {
   background: #f8f9fa;
   border: 2px solid #e9ecef;

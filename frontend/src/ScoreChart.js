@@ -1,5 +1,6 @@
 import React from "react";
 import "./ScoreChart.css";
+import ScoringTable from "./ScoringTable";
 
 const ScoreChart = ({ summary, turns = [] }) => {
   if (!summary || !summary.averages || !summary.category_averages) {
@@ -120,7 +121,7 @@ const ScoreChart = ({ summary, turns = [] }) => {
           <h3 className="best-response-title">✨ Best Response</h3>
           <p className="best-response-subtitle">
             Highest scoring response from{" "}
-            {summary.recommended_models[0].toUpperCase()}
+            <strong>{summary.recommended_models[0].toUpperCase()}</strong>
           </p>
 
           {(() => {
@@ -178,15 +179,29 @@ const ScoreChart = ({ summary, turns = [] }) => {
                     {bestResponse.response}
                   </div>
                 </details>
+
+                {/* Score Breakdown - Collapsible */}
+                {bestResponse.score_detail && (
+                  <details className="best-response-scoring-details">
+                    <summary className="best-response-scoring-summary">
+                      📊 View Detailed Score Breakdown
+                    </summary>
+                    <div className="best-response-scoring-content">
+                      <ScoringTable scoreDetail={bestResponse.score_detail} />
+                    </div>
+                  </details>
+                )}
               </div>
             );
           })()}
         </div>
       )}
 
-      {/* Legend */}
-      <div className="legend-section">
-        <h4 className="legend-title">💡 How to Read This Chart</h4>
+      {/* Legend - Now collapsible */}
+      <details className="legend-section" close>
+        <summary className="legend-title">
+          💡 How to Read The Chart BELOW
+        </summary>
         <ul className="legend-list">
           <li>
             <strong>Bar length</strong> = Score achieved out of maximum possible
@@ -200,7 +215,7 @@ const ScoreChart = ({ summary, turns = [] }) => {
             <strong>Number on right</strong> = Score achieved / Maximum points
           </li>
         </ul>
-      </div>
+      </details>
 
       <div className="models-section">
         {models.map((model) => {
@@ -247,7 +262,6 @@ const ScoreChart = ({ summary, turns = [] }) => {
                           <span className="category-name-text">
                             {formatCategoryName(category)}
                           </span>
-                          <span className="info-icon">ⓘ</span>
                         </div>
 
                         <div className="category-bar-container">
