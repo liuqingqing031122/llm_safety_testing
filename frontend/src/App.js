@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import Navbar from "./Navbar";
 import ScoreChart from "./ScoreChart";
 import ScoringTable from "./ScoringTable";
 import { useAuth } from "./AuthContext";
 import ResetPassword from "./ResetPassword";
+import PageGuide from "./PageGuide";
 
 function App() {
   const { token, login } = useAuth();
@@ -21,6 +22,15 @@ function App() {
   const [finalSummary, setFinalSummary] = useState(null);
   const [currentRunIndexes, setCurrentRunIndexes] = useState({});
   const [showFloatingButton, setShowFloatingButton] = useState(false);
+
+  // Page guide states
+  const [showGuide, setShowGuide] = useState(false);
+  const [guidePhase, setGuidePhase] = useState(null);
+  const [hasShownResultsGuide, setHasShownResultsGuide] = useState(false);
+  const [hasShownScoringGuide, setHasShownScoringGuide] = useState(false);
+
+  // Use ref to track if welcome guide has been checked (prevents re-running)
+  const welcomeGuideChecked = useRef(false);
 
   // Page navigation state
   const [currentPage, setCurrentPage] = useState("input"); // "input" or "results"
@@ -96,6 +106,66 @@ function App() {
       }
     }
   }, []);
+
+  // Show welcome guide on first visit
+  useEffect(() => {
+    // Only check once per component lifecycle
+    if (welcomeGuideChecked.current) {
+      return;
+    }
+
+    // Check if there's saved state in sessionStorage
+    const savedState = sessionStorage.getItem("conversationState");
+
+    if (savedState) {
+      // This is a page refresh - show guide based on current page state
+      const parsed = JSON.parse(savedState);
+      const hasTurns = parsed.turns && parsed.turns.length > 0;
+      const isScored = parsed.isScored;
+      const page = parsed.currentPage || "input";
+
+      // Determine which guide to show based on page state
+      if (page === "results" && hasTurns) {
+        // On results page with conversation - show results or scoring guide
+        if (isScored && !localStorage.getItem("guide_disabled_scoring")) {
+          setTimeout(() => {
+            setGuidePhase("scoring");
+            setShowGuide(true);
+          }, 500);
+        } else if (!localStorage.getItem("guide_disabled_results")) {
+          setTimeout(() => {
+            setGuidePhase("results");
+            setShowGuide(true);
+          }, 500);
+        }
+      } else if (
+        page === "input" &&
+        !localStorage.getItem("guide_disabled_welcome")
+      ) {
+        // On input page - always show welcome guide (regardless of conversation)
+        setTimeout(() => {
+          setGuidePhase("welcome");
+          setShowGuide(true);
+        }, 300);
+      }
+    } else {
+      // First visit - show welcome guide if conditions are met
+      const hasSeenWelcome = localStorage.getItem("guide_disabled_welcome");
+
+      if (!hasSeenWelcome && currentPage === "input") {
+        setTimeout(() => {
+          setGuidePhase("welcome");
+          setShowGuide(true);
+        }, 300);
+      } else {
+        setShowGuide(false);
+        setGuidePhase(null);
+      }
+    }
+
+    // Mark as checked so it doesn't run again
+    welcomeGuideChecked.current = true;
+  }, [currentPage, turns.length]); // Include dependencies to satisfy ESLint
 
   useEffect(() => {
     // Check URL for reset token
@@ -310,6 +380,18 @@ function App() {
       // ✨ Navigate to results page after receiving responses
       setCurrentPage("results");
 
+      // ✅ Show results guide on first response (if not seen before)
+      if (
+        !hasShownResultsGuide &&
+        !localStorage.getItem("guide_disabled_results")
+      ) {
+        setTimeout(() => {
+          setGuidePhase("results");
+          setShowGuide(true);
+          setHasShownResultsGuide(true);
+        }, 500); // Show quickly after responses load
+      }
+
       // ✅ Auto-scroll to the new turn after it's rendered
       setTimeout(() => {
         const allTurns = document.querySelectorAll(".turn-container");
@@ -369,6 +451,18 @@ function App() {
       setFinalSummary(summaryData);
 
       setIsScored(true);
+
+      // ✅ Show scoring guide on first score (if not seen before)
+      if (
+        !hasShownScoringGuide &&
+        !localStorage.getItem("guide_disabled_scoring")
+      ) {
+        setTimeout(() => {
+          setGuidePhase("scoring");
+          setShowGuide(true);
+          setHasShownScoringGuide(true);
+        }, 500); // Show quickly after scoring completes
+      }
 
       // ✨ Scroll to the persistent reminder (scores-above-reminder) after scoring
       setTimeout(() => {
@@ -470,6 +564,10 @@ function App() {
 
   const handleNavigation = (section) => {
     console.log(`Navigate to: ${section}`);
+  };
+
+  const handleGuideComplete = () => {
+    setShowGuide(false);
   };
 
   // Render Input Page (Page 1)
@@ -702,7 +800,7 @@ function App() {
                       <line x1="12" y1="18" x2="12" y2="12"></line>
                       <line x1="9" y1="15" x2="15" y2="15"></line>
                     </svg>
-                    Start Scoring
+                    Scoring
                   </>
                 )}
               </button>
@@ -973,6 +1071,11 @@ function App() {
       <Navbar onNavigate={handleNavigation} />
 
       {currentPage === "input" ? renderInputPage() : renderResultsPage()}
+
+      {/* Page Guide Tutorial */}
+      {showGuide && guidePhase && (
+        <PageGuide phase={guidePhase} onComplete={handleGuideComplete} />
+      )}
     </div>
   );
 }

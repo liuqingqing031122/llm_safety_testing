@@ -1,0 +1,426 @@
+/* ==================== Guide Overlay ==================== */
+.guide-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9998;
+}
+
+/* ==================== Guide Modal ==================== */
+.guide-modal {
+  position: fixed;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* ==================== Guide Indicator Text ==================== */
+.guide-indicator-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px 12px 0 0;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+  animation: gentle-bounce 2s ease-in-out infinite;
+}
+
+@keyframes gentle-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* ==================== Guide Arrow ==================== */
+.guide-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  z-index: 10000;
+}
+
+.guide-arrow-top {
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 20px 20px 20px;
+  border-color: transparent transparent white transparent;
+  filter: drop-shadow(0 -4px 3px rgba(0, 0, 0, 0.1));
+}
+
+.guide-arrow-bottom {
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 20px 20px 0 20px;
+  border-color: white transparent transparent transparent;
+  filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
+}
+
+/* ==================== Progress Indicator ==================== */
+.guide-progress {
+  padding: 1.5rem 2rem 0.75rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.guide-indicator-text + .guide-progress {
+  padding-top: 1rem;
+}
+
+.guide-progress-text {
+  font-size: 0.875rem;
+  color: #667eea;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.guide-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.guide-progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ==================== Guide Content ==================== */
+.guide-content {
+  padding: 2rem;
+}
+
+.guide-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  line-height: 1.3;
+}
+
+.guide-body {
+  color: #4a5568;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.guide-body p {
+  margin: 0 0 1rem 0;
+}
+
+.guide-body ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.guide-body li {
+  margin: 0.5rem 0;
+}
+
+/* Info Boxes */
+.info-box,
+.highlight-box,
+.example-box {
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  margin: 1rem 0;
+}
+
+.info-box {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-left: 4px solid #2196f3;
+}
+
+.highlight-box {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border-left: 4px solid #ff9800;
+}
+
+.example-box {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  border-left: 4px solid #9c27b0;
+}
+
+.info-box strong,
+.highlight-box strong,
+.example-box strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.info-box ul,
+.highlight-box ul,
+.example-box ul {
+  margin: 0.5rem 0 0 0;
+}
+
+.note-text {
+  font-size: 0.9rem;
+  color: #718096;
+  font-style: italic;
+  margin-top: 1rem;
+}
+
+/* ==================== Guide Actions ==================== */
+.guide-actions {
+  padding: 1.25rem 2rem 2rem;
+  border-top: 2px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.guide-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #4a5568;
+  user-select: none;
+}
+
+.guide-checkbox input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.guide-buttons {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* ==================== Guide Buttons ==================== */
+.guide-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  white-space: nowrap;
+}
+
+.guide-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.guide-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.guide-btn-secondary {
+  background: #f8f9fa;
+  color: #495057;
+  border: 2px solid #e9ecef;
+}
+
+.guide-btn-secondary:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.guide-btn-skip {
+  background: white;
+  color: #718096;
+  border: 2px solid #e2e8f0;
+}
+
+.guide-btn-skip:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+/* ==================== Element Highlight ==================== */
+.guide-highlight {
+  position: relative;
+  z-index: 9997;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.8),
+    0 0 0 8px rgba(102, 126, 234, 0.5), 0 0 30px 10px rgba(102, 126, 234, 0.6),
+    0 8px 24px rgba(0, 0, 0, 0.2) !important;
+  border-radius: 12px;
+  animation: highlightPulse 2s ease-in-out infinite;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Special highlight for elements that should stay white (like login button) */
+.user-menu-button.guide-highlight {
+  background: white !important;
+  animation: whiteHighlightPulse 2s ease-in-out infinite;
+}
+
+/* Special highlight for login section - keep original background */
+.btn-login.guide-highlight {
+  background: white !important;
+  animation: whiteHighlightPulse 2s ease-in-out infinite;
+}
+
+/* Special highlight for conversation history - keep original background */
+.conversation-history.guide-highlight {
+  background: white !important;
+  animation: whiteHighlightPulse 2s ease-in-out infinite;
+}
+
+/* Adjust navbar z-index when guide is active to prevent overlap */
+.App:has(.guide-overlay) .navbar,
+.App:has(.guide-overlay) header {
+  z-index: 9996 !important;
+}
+
+/* Prevent conversation history from overlapping with navbar */
+.conversation-history.guide-highlight {
+  margin-top: 20px !important;
+  scroll-margin-top: 100px;
+}
+
+/* Ensure navbar buttons appear smoothly when highlighted */
+.nav-link.guide-highlight {
+  transition: all 0.3s ease;
+  z-index: 9998 !important;
+}
+
+@keyframes highlightPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.8),
+      0 0 0 8px rgba(102, 126, 234, 0.5), 0 0 30px 10px rgba(102, 126, 234, 0.6),
+      0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 1),
+      0 0 0 12px rgba(102, 126, 234, 0.7),
+      0 0 50px 15px rgba(102, 126, 234, 0.8), 0 12px 32px rgba(0, 0, 0, 0.3);
+  }
+}
+
+@keyframes whiteHighlightPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.9),
+      0 0 0 8px rgba(102, 126, 234, 0.6), 0 0 30px 10px rgba(102, 126, 234, 0.7),
+      0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(102, 126, 234, 1),
+      0 0 0 14px rgba(102, 126, 234, 0.8),
+      0 0 50px 15px rgba(102, 126, 234, 0.9), 0 12px 32px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* ==================== Responsive Design ==================== */
+@media (max-width: 768px) {
+  .guide-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .guide-content {
+    padding: 1.5rem;
+  }
+
+  .guide-title {
+    font-size: 1.25rem;
+  }
+
+  .guide-body {
+    font-size: 0.95rem;
+  }
+
+  .guide-actions {
+    padding: 1rem 1.5rem 1.5rem;
+  }
+
+  .guide-buttons {
+    width: 100%;
+  }
+
+  .guide-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 0.65rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  /* Center modal on mobile */
+  .guide-modal[style] {
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+
+  /* Hide arrows on mobile */
+  .guide-arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .guide-progress {
+    padding: 1.25rem 1.5rem 0.75rem;
+  }
+
+  .guide-content {
+    padding: 1.25rem;
+  }
+
+  .guide-title {
+    font-size: 1.1rem;
+  }
+
+  .guide-body {
+    font-size: 0.9rem;
+  }
+
+  .guide-buttons {
+    flex-direction: column;
+  }
+
+  .guide-btn {
+    width: 100%;
+  }
+}
+
+/* ==================== Scrollbar Styling ==================== */
+.guide-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.guide-modal::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+
+.guide-modal::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 8px;
+}
+
+.guide-modal::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
