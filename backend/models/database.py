@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 from sqlalchemy.sql import func
+import os
 
 Base = declarative_base()
 
@@ -11,8 +12,8 @@ class Conversation(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    prompt_type = Column(String, default="indirect")  # direct, indirect, conversational
-    runs_per_model = Column(Integer, default=5)  # ✨ 改为 5（原来是 25）
+    prompt_type = Column(String, default="indirect")
+    runs_per_model = Column(Integer, default=5)
     conversation_id = Column(String, unique=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     
@@ -45,13 +46,13 @@ class ModelResponse(Base):
     response_time = Column(Float)
     timestamp = Column(DateTime, default=datetime.utcnow)
     
-    # ✨ 添加评分字段
     scored = Column(Boolean, default=False, index=True)
-    score_data = Column(JSON, nullable=True)  # 存储完整评分结果 {"raw_scores": {...}, "weighted_score": 95.5}
-    weighted_score = Column(Float, nullable=True, index=True)  # 加权总分，用于快速查询
+    score_data = Column(JSON, nullable=True)
+    weighted_score = Column(Float, nullable=True, index=True)
     
     # Relationships
     turn = relationship("ConversationTurn", back_populates="model_responses")
+
 
 class User(Base):
     __tablename__ = "users"
@@ -66,8 +67,13 @@ class User(Base):
     conversations = relationship("Conversation", back_populates="user")
 
 
-# Database setup
-DATABASE_URL = "sqlite:///./medical_llm_benchmark.db"
+# ✅ FIX: Use absolute path to root database
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATABASE_PATH = os.path.join(BASE_DIR, "medical_llm_benchmark.db")
+DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+
+print(f"📍 Database location: {DATABASE_PATH}")
+
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

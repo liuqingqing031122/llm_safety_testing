@@ -4,10 +4,12 @@ import Navbar from "./Navbar";
 import ScoreChart from "./ScoreChart";
 import ScoringTable from "./ScoringTable";
 import { useAuth } from "./AuthContext";
+import ResetPassword from "./ResetPassword";
 
 function App() {
-  const { token } = useAuth(); // Get auth token
-
+  const { token, login } = useAuth();
+  const [isResetPassword, setIsResetPassword] = useState(false);
+  const [resetToken, setResetToken] = useState("");
   const [message, setMessage] = useState("");
   const [selectedModels, setSelectedModels] = useState(["claude"]);
   const [conversationId, setConversationId] = useState(null);
@@ -38,6 +40,43 @@ function App() {
     return headers;
   };
 
+  // ✅ NEW: Handle OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    // Check for reset token
+    const urlResetToken = params.get("token");
+    if (urlResetToken) {
+      setResetToken(urlResetToken);
+      setIsResetPassword(true);
+      return;
+    }
+
+    // Check for OAuth token
+    const oauthToken = params.get("oauth_token");
+    const oauthEmail = params.get("oauth_email");
+    const oauthName = params.get("oauth_name");
+    const oauthError = params.get("oauth_error");
+
+    if (oauthError) {
+      alert(`Login failed: ${oauthError}`);
+      window.history.replaceState({}, "", "/");
+      return;
+    }
+
+    if (oauthToken && oauthEmail && oauthName) {
+      // Log user in with OAuth token
+      const user = {
+        email: oauthEmail,
+        name: oauthName,
+      };
+      login(oauthToken, user, false); // OAuth users don't need "remember me"
+
+      // Clean URL
+      window.history.replaceState({}, "", "/");
+    }
+  }, [login]);
+
   useEffect(() => {
     const savedState = sessionStorage.getItem("conversationState");
     if (savedState) {
@@ -55,6 +94,17 @@ function App() {
         console.error("Failed to parse saved state:", err);
         sessionStorage.removeItem("conversationState");
       }
+    }
+  }, []);
+
+  useEffect(() => {
+    // Check URL for reset token
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("token");
+
+    if (urlToken) {
+      setResetToken(urlToken);
+      setIsResetPassword(true);
     }
   }, []);
 
@@ -101,6 +151,18 @@ function App() {
       return () => window.removeEventListener("scroll", handleScroll);
     }
   }, [currentPage]);
+
+  if (isResetPassword) {
+    return (
+      <ResetPassword
+        token={resetToken}
+        onComplete={() => {
+          setIsResetPassword(false);
+          window.history.replaceState({}, "", "/");
+        }}
+      />
+    );
+  }
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -247,6 +309,24 @@ function App() {
 
       // ✨ Navigate to results page after receiving responses
       setCurrentPage("results");
+
+      // ✅ Auto-scroll to the new turn after it's rendered
+      setTimeout(() => {
+        const allTurns = document.querySelectorAll(".turn-container");
+        if (allTurns.length > 0) {
+          const lastTurn = allTurns[allTurns.length - 1];
+          lastTurn.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+
+          // Auto-expand the new turn's details
+          const detailsElements = lastTurn.querySelectorAll(".model-details");
+          detailsElements.forEach((details) => {
+            details.open = true;
+          });
+        }
+      }, 100);
     } catch (error) {
       console.error("❌ Error:", error);
       setError(error.message);
@@ -569,23 +649,85 @@ function App() {
         </div>
       </div>
 
-      {/* Floating "New Conversation" button - only shows when scrolled */}
+      {/* Floating Action Buttons - Shows when scrolled past header */}
       {showFloatingButton && (
-        <button className="btn-new-floating" onClick={startNewConversation}>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="floating-buttons-container">
+          {!isScored && (
+            <>
+              <button
+                className="btn-floating btn-continue-floating"
+                onClick={continueConversation}
+                title="Continue Asking"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Continue Asking
+              </button>
+
+              <button
+                className="btn-floating btn-score-floating"
+                onClick={startScoring}
+                disabled={isScoring}
+                title="Start Scoring"
+              >
+                {isScoring ? (
+                  <>
+                    <span className="spinner-small"></span>
+                    Scoring...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="12" y1="18" x2="12" y2="12"></line>
+                      <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                    Start Scoring
+                  </>
+                )}
+              </button>
+            </>
+          )}
+
+          <button
+            className="btn-floating btn-new-floating"
+            onClick={startNewConversation}
           >
-            <path d="M12 5v14M5 12h14"></path>
-          </svg>
-          New Conversation
-        </button>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 5v14M5 12h14"></path>
+            </svg>
+            New Conversation
+          </button>
+        </div>
       )}
 
       {error && <div className="error-message">❌ {error}</div>}

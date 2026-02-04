@@ -4,6 +4,7 @@ import Login from "./Login";
 import Register from "./Register";
 import "./Navbar.css";
 import References from "./References";
+import ForgotPassword from "./ForgotPassword";
 
 const Navbar = ({ onNavigate }) => {
   const { user, logout } = useAuth();
@@ -11,11 +12,11 @@ const Navbar = ({ onNavigate }) => {
   const [showScoring, setShowScoring] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login");
-  const [showUserDropdown, setShowUserDropdown] = useState(false); // ✅ New
-  const [showHistoryModal, setShowHistoryModal] = useState(false); // ✅ New
-  const dropdownRef = useRef(null); // ✅ New
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const dropdownRef = useRef(null);
 
-  // ✅ Close dropdown when clicking outside
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -100,19 +101,23 @@ const Navbar = ({ onNavigate }) => {
 
                 {showUserDropdown && (
                   <div className="user-dropdown">
+                    <div className="user-dropdown-header">
+                      <div className="user-dropdown-name">{user.name}</div>
+                      <div className="user-dropdown-email">{user.email}</div>
+                    </div>
                     <div className="user-dropdown-divider"></div>
                     <button
                       className="user-dropdown-item"
                       onClick={openHistory}
                     >
-                      Conversation History
+                      📋 Conversation History
                     </button>
                     <div className="user-dropdown-divider"></div>
                     <button
                       className="user-dropdown-item logout"
                       onClick={handleLogout}
                     >
-                      Logout
+                      🚪 Logout
                     </button>
                   </div>
                 )}
@@ -125,7 +130,7 @@ const Navbar = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Existing dropdowns ... */}
+        {/* Existing dropdowns */}
         {showReferences && (
           <div className="navbar-dropdown">
             <div className="dropdown-content references-dropdown-wrapper">
@@ -170,11 +175,17 @@ const Navbar = ({ onNavigate }) => {
             {authMode === "login" ? (
               <Login
                 onSwitchToRegister={() => setAuthMode("register")}
+                onForgotPassword={() => setAuthMode("forgot")}
+                onClose={() => setShowAuthModal(false)}
+              />
+            ) : authMode === "register" ? (
+              <Register
+                onSwitchToLogin={() => setAuthMode("login")}
                 onClose={() => setShowAuthModal(false)}
               />
             ) : (
-              <Register
-                onSwitchToLogin={() => setAuthMode("login")}
+              <ForgotPassword
+                onBack={() => setAuthMode("login")}
                 onClose={() => setShowAuthModal(false)}
               />
             )}
@@ -182,7 +193,7 @@ const Navbar = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* ✅ NEW: History Modal */}
+      {/* History Modal */}
       {showHistoryModal && (
         <ConversationHistoryModal onClose={() => setShowHistoryModal(false)} />
       )}
@@ -190,7 +201,7 @@ const Navbar = ({ onNavigate }) => {
   );
 };
 
-// ✅ NEW: Conversation History Modal Component
+// Conversation History Modal Component
 const ConversationHistoryModal = ({ onClose }) => {
   const { token } = useAuth();
   const [conversations, setConversations] = useState([]);
@@ -207,6 +218,7 @@ const ConversationHistoryModal = ({ onClose }) => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
@@ -330,21 +342,21 @@ const ConversationHistoryModal = ({ onClose }) => {
 
             {/* Conversation Turns */}
             <div className="conversation-turns">
-              <h3>💬 Best Response</h3>
+              <h3>💬 Best Model's Responses</h3>
               {conversationDetails.turns.map((turn) => (
                 <div key={turn.turn_number} className="turn-detail">
                   <div className="turn-question">
                     <strong>Q{turn.turn_number}:</strong> {turn.user_message}
                   </div>
 
-                  {/* Show best response for this turn */}
+                  {/* Show best model's response for this turn */}
                   {turn.model_responses.length > 0 && (
                     <div className="turn-responses">
-                      {/* Find best response */}
                       {(() => {
                         const scoredResponses = turn.model_responses.filter(
-                          (r) => r.scored
+                          (r) => r.scored && r.weighted_score !== null
                         );
+
                         if (scoredResponses.length === 0) {
                           // Show all responses if not scored
                           return turn.model_responses.map((resp) => (
@@ -364,48 +376,55 @@ const ConversationHistoryModal = ({ onClose }) => {
                           ));
                         }
 
-                        // Find best scored response
-                        const bestResponse = scoredResponses.reduce(
-                          (best, current) =>
+                        // ✅ Show response from the overall best model
+                        const bestModelName =
+                          conversationDetails.final_summary
+                            ?.recommended_models[0];
+                        const bestModelResponse = scoredResponses.find(
+                          (r) => r.model_name === bestModelName
+                        );
+
+                        // Fallback if best model didn't respond to this turn
+                        const displayResponse =
+                          bestModelResponse ||
+                          scoredResponses.reduce((best, current) =>
                             current.weighted_score > best.weighted_score
                               ? current
                               : best
-                        );
+                          );
 
                         return (
                           <div className="response-detail best-response">
                             <div className="response-header">
                               <span className="response-model">
-                                🏆 {bestResponse.model_name.toUpperCase()}
+                                🏆 {displayResponse.model_name.toUpperCase()}
                               </span>
                               <span
                                 className={`response-score ${
-                                  bestResponse.weighted_score >= 80
+                                  displayResponse.weighted_score >= 80
                                     ? "high"
-                                    : bestResponse.weighted_score >= 60
+                                    : displayResponse.weighted_score >= 60
                                     ? "medium"
                                     : "low"
                                 }`}
                               >
-                                {bestResponse.weighted_score.toFixed(1)}/100
+                                {displayResponse.weighted_score.toFixed(1)}/100
                               </span>
                               <span className="response-time">
-                                {bestResponse.response_time?.toFixed(2)}s
+                                {displayResponse.response_time?.toFixed(2)}s
                               </span>
                             </div>
 
                             <div className="response-text">
-                              {bestResponse.response_text}
+                              {displayResponse.response_text}
                             </div>
 
-                            {/* ✅ ADD: Detailed Score Breakdown */}
-                            {/* ✅ FIXED: Detailed Score Breakdown - Simplified */}
-                            {bestResponse.score_data &&
-                              bestResponse.score_data.raw_scores &&
+                            {/* Detailed Score Breakdown */}
+                            {displayResponse.score_data &&
+                              displayResponse.score_data.raw_scores &&
                               (() => {
-                                // Get weights based on prompt type from score_data
                                 const promptType =
-                                  bestResponse.score_data.prompt_type ||
+                                  displayResponse.score_data.prompt_type ||
                                   "direct";
 
                                 const weightsByType = {
@@ -458,13 +477,13 @@ const ConversationHistoryModal = ({ onClose }) => {
                                         </thead>
                                         <tbody>
                                           {Object.entries(
-                                            bestResponse.score_data.raw_scores
+                                            displayResponse.score_data
+                                              .raw_scores
                                           )
                                             .filter(
                                               ([key]) => key !== "reasoning"
                                             )
                                             .sort((a, b) => {
-                                              // Sort by weight (highest first)
                                               return (
                                                 (weights[b[0]] || 0) -
                                                 (weights[a[0]] || 0)
@@ -522,7 +541,7 @@ const ConversationHistoryModal = ({ onClose }) => {
                                             </td>
                                             <td className="total-score">
                                               <strong>
-                                                {bestResponse.weighted_score.toFixed(
+                                                {displayResponse.weighted_score.toFixed(
                                                   1
                                                 )}
                                                 /100

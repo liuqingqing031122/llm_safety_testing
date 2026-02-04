@@ -9,19 +9,24 @@ import time
 from . import auth  # Import auth router
 from .auth import get_current_user_optional
 from .models import Base, User
-
 from .models.database import init_db, get_db, Conversation, ConversationTurn, ModelResponse, engine
-
 from dotenv import load_dotenv
 load_dotenv()
 from .models.llm_client import LLMClient
 from .models.prompt_detector import PromptTypeDetector
 from .models.references_routes import router as reference_router, set_reference_loader
 from .models.reference_loader import ReferenceLoader
+from starlette.middleware.sessions import SessionMiddleware
+import re
+
+import os
+from .models.database import engine
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+app.add_middleware(SessionMiddleware, secret_key="-ELNQriWOTXQNE49B07rgtv8811eAzGurVhTfySUc0M")
 
 app.add_middleware(
     CORSMiddleware,
@@ -55,19 +60,65 @@ class SendMessageRequest(BaseModel):
 # ENDPOINTS
 # ============================================================================
 
+def extract_run_number(message: str, max_runs: int = 5) -> int:
+    """
+    Extract run number from user message.
+    Returns the run number (1-indexed) or 1 as default.
+    """
+    # Patterns to match:
+    # "run 2", "run #2", "response 3", "answer 4", "the second one", "the third response", etc.
+    
+    patterns = [
+        r'run\s*#?(\d+)',
+        r'response\s*#?(\d+)',
+        r'answer\s*#?(\d+)',
+        r'version\s*#?(\d+)',
+        r'the\s+(\d+)(?:st|nd|rd|th)\s+(?:one|run|response|answer)',
+        r'number\s*(\d+)',
+    ]
+    
+    message_lower = message.lower()
+    
+    for pattern in patterns:
+        match = re.search(pattern, message_lower)
+        if match:
+            run_num = int(match.group(1))
+            if 1 <= run_num <= max_runs:
+                print(f"🎯 Detected run number {run_num} in message")
+                return run_num
+    
+    # Check for word numbers: "first", "second", "third", etc.
+    word_to_num = {
+        'first': 1, 'second': 2, 'third': 3, 'fourth': 4, 'fifth': 5,
+        'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5
+    }
+    
+    for word, num in word_to_num.items():
+        if word in message_lower and num <= max_runs:
+            print(f"🎯 Detected run number {num} from word '{word}'")
+            return num
+    
+    print(f"📌 No run number specified, using run 1 by default")
+    return 1  # Default to first run
+
 @app.post("/api/conversations")
 async def create_conversation(
     request: ConversationCreate, 
     db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user_optional)  # ✅ Make optional
+    current_user: Optional[User] = Depends(auth.get_current_user_optional)
 ):
     """Create a new conversation"""
+    user_id = current_user.id if current_user else None
+    print(f"📝 Creating conversation for user: {user_id}")
+    
     conversation = Conversation(
-        user_id=current_user.id if current_user else None  # ✅ None if not logged in
+        user_id=user_id
     )
     db.add(conversation)
     db.commit()
     db.refresh(conversation)
+    
+    print(f"✅ Conversation {conversation.id} created with user_id: {conversation.user_id}")
     
     return {
         "conversation_id": conversation.id,
@@ -110,6 +161,9 @@ async def send_message(
     prompt_type = detection_result["type"]
     runs_per_model = detection_result["runs_per_model"]
     
+    # ✅ Detect requested run number from user's message
+    requested_run = extract_run_number(request.message, max_runs=5)
+    
     print(f"🎯 Detected prompt type: {prompt_type}")
     print(f"🔄 Will run {runs_per_model} times per model")
     print(f"💡 Reasoning: {detection_result.get('reasoning', 'N/A')}")
@@ -129,30 +183,119 @@ async def send_message(
     db.commit()
     db.refresh(turn)
     
-    # Get conversation history for context (if needed)
+    # ✅ UPDATED: Get conversation history with requested run number
     conversation_history = []
-    if turn_number > 1:
-        previous_turns = db.query(ConversationTurn).filter(
-            ConversationTurn.conversation_id == conversation_id,
-            ConversationTurn.turn_number < turn_number
-        ).order_by(ConversationTurn.turn_number).all()
+    
+    if prompt_type == "conversational" and turn_number > 1:
+        if turn_number <= 4:  # ≤3 previous turns - send full history
+            print(f"📚 Conversational mode - sending full history ({turn_number - 1} turns)")
+            
+            previous_turns = db.query(ConversationTurn).filter(
+                ConversationTurn.conversation_id == conversation_id,
+                ConversationTurn.turn_number < turn_number
+            ).order_by(ConversationTurn.turn_number).all()
+            
+            for prev_turn in previous_turns:
+                # Try each model in order
+                for model_name in request.models:
+                    # Get ALL responses from this model for this turn
+                    all_responses = db.query(ModelResponse).filter(
+                        ModelResponse.conversation_turn_id == prev_turn.id,
+                        ModelResponse.model_name == model_name
+                    ).order_by(ModelResponse.id.asc()).all()
+                    
+                    if all_responses:
+                        # Pick the requested run (1-indexed) or default to first
+                        target_run = min(requested_run, len(all_responses))
+                        selected_response = all_responses[target_run - 1]  # Convert to 0-indexed
+                        
+                        print(f"   🎯 Turn {prev_turn.turn_number}: Using {model_name}'s run #{target_run}")
+                        
+                        conversation_history.append({
+                            "role": "user",
+                            "content": prev_turn.user_message
+                        })
+                        conversation_history.append({
+                            "role": "assistant",
+                            "content": selected_response.response_text
+                        })
+                        break  # Only need one model's response
         
-        for prev_turn in previous_turns:
-            for model_name in request.models:
-                prev_response = db.query(ModelResponse).filter(
-                    ModelResponse.conversation_turn_id == prev_turn.id,
-                    ModelResponse.model_name == model_name
-                ).first()
-                if prev_response:
-                    conversation_history.append({
-                        "role": "user",
-                        "content": prev_turn.user_message
-                    })
-                    conversation_history.append({
-                        "role": "assistant",
-                        "content": prev_response.response_text
-                    })
-                    break
+        else:  # Turn 5+ - summarize old, keep recent full
+            print(f"📚 Conversational mode - summarizing old history, keeping recent context")
+            
+            # Get all previous turns
+            all_previous_turns = db.query(ConversationTurn).filter(
+                ConversationTurn.conversation_id == conversation_id,
+                ConversationTurn.turn_number < turn_number
+            ).order_by(ConversationTurn.turn_number).all()
+            
+            # Split into "old" (to summarize) and "recent" (keep full)
+            num_old_turns = len(all_previous_turns) - 2  # All except last 2
+            old_turns = all_previous_turns[:num_old_turns]
+            recent_turns = all_previous_turns[num_old_turns:]
+            
+            # Create summary of old turns
+            if old_turns:
+                summary_parts = []
+                for prev_turn in old_turns:
+                    # Get first response for this turn
+                    for model_name in request.models:
+                        all_responses = db.query(ModelResponse).filter(
+                            ModelResponse.conversation_turn_id == prev_turn.id,
+                            ModelResponse.model_name == model_name
+                        ).order_by(ModelResponse.id.asc()).all()
+                        
+                        if all_responses:
+                            # Use requested run or first
+                            target_run = min(requested_run, len(all_responses))
+                            prev_response = all_responses[target_run - 1]
+                            
+                            # Create concise summary
+                            user_msg = prev_turn.user_message[:80] + "..." if len(prev_turn.user_message) > 80 else prev_turn.user_message
+                            ai_msg = prev_response.response_text[:80] + "..." if len(prev_response.response_text) > 80 else prev_response.response_text
+                            
+                            summary_parts.append(
+                                f"Turn {prev_turn.turn_number}: User: '{user_msg}' | AI: '{ai_msg}'"
+                            )
+                            break
+                
+                # Add summary as a user message
+                conversation_history.append({
+                    "role": "user",
+                    "content": f"[Previous conversation summary:\n" + "\n".join(summary_parts) + "]"
+                })
+            
+            # Add recent 2 turns in full
+            for prev_turn in recent_turns:
+                for model_name in request.models:
+                    all_responses = db.query(ModelResponse).filter(
+                        ModelResponse.conversation_turn_id == prev_turn.id,
+                        ModelResponse.model_name == model_name
+                    ).order_by(ModelResponse.id.asc()).all()
+                    
+                    if all_responses:
+                        # Use requested run or first
+                        target_run = min(requested_run, len(all_responses))
+                        selected_response = all_responses[target_run - 1]
+                        
+                        print(f"   🎯 Turn {prev_turn.turn_number}: Using {model_name}'s run #{target_run} (recent)")
+                        
+                        conversation_history.append({
+                            "role": "user",
+                            "content": prev_turn.user_message
+                        })
+                        conversation_history.append({
+                            "role": "assistant",
+                            "content": selected_response.response_text
+                        })
+                        break
+            
+            print(f"   Summarized {num_old_turns} old turns, kept {len(recent_turns)} recent turns full")
+    
+    else:
+        # Direct/Indirect mode - no history needed
+        print(f"📝 {prompt_type} mode - no conversation history")
     
     # ✅ PARALLEL EXECUTION: Create all tasks upfront
     print(f"\n🚀 Generating {len(request.models)} models × {runs_per_model} runs in PARALLEL...")
@@ -236,7 +379,7 @@ async def send_message(
         "runs_per_model": runs_per_model,
         "detection_info": detection_result,
         "responses": all_responses,
-        "total_time": total_time  # ✨ Show total execution time
+        "total_time": total_time
     }
 
 
@@ -591,9 +734,13 @@ async def get_user_conversations(
     current_user: User = Depends(auth.get_current_user_dependency)
 ):
     """Get all conversations for the current user"""
+    print(f"📋 Loading conversations for user: {current_user.id} ({current_user.email})")
+    
     conversations = db.query(Conversation).filter(
         Conversation.user_id == current_user.id
     ).order_by(Conversation.created_at.desc()).all()
+    
+    print(f"✅ Found {len(conversations)} conversations")
     
     result = []
     for conv in conversations:

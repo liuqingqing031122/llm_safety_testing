@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, text
 
-# Change this line - use the direct database URL
+# Use the correct database path
 DATABASE_URL = "sqlite:///./medical_llm_benchmark.db"
 
 engine = create_engine(DATABASE_URL)
@@ -17,8 +17,9 @@ def upgrade():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
+        print("✅ Users table created!")
         
-        # Add user_id to conversations table (if it exists)
+        # Add user_id to conversations table
         try:
             conn.execute(text("""
                 ALTER TABLE conversations ADD COLUMN user_id INTEGER REFERENCES users(id)

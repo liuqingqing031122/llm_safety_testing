@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "./AuthContext";
 import "./Auth.css";
 
-function Login({ onSwitchToRegister, onClose }) {
+function Login({ onSwitchToRegister, onClose, onForgotPassword }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -36,9 +36,42 @@ function Login({ onSwitchToRegister, onClose }) {
     }
   };
 
+  // ✅ NEW: Google OAuth login
+  const handleGoogleLogin = () => {
+    // Redirect to backend Google OAuth endpoint
+    window.location.href = "http://localhost:8000/api/auth/google/login";
+  };
+
+  const handleGithubLogin = () => {
+    window.location.href = "http://localhost:8000/api/auth/github/login";
+  };
+
   return (
     <div className="auth-form">
       <h2>Welcome Back</h2>
+      {/* ✅ NEW: OAuth buttons section */}
+      <div className="oauth-buttons">
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="oauth-btn google-btn"
+        >
+          <span className="oauth-icon">🔵</span>
+          Continue with Google
+        </button>
+        <button
+          type="button"
+          onClick={handleGithubLogin}
+          className="oauth-btn github-btn"
+        >
+          <span className="oauth-icon">⚫</span>
+          Continue with GitHub
+        </button>
+      </div>
+
+      <div className="auth-divider">
+        <span>or</span>
+      </div>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Email</label>
@@ -62,6 +95,20 @@ function Login({ onSwitchToRegister, onClose }) {
             placeholder="••••••••"
             autoComplete="current-password"
           />
+        </div>
+
+        <div
+          className="form-group"
+          style={{ textAlign: "right", marginTop: "-0.5rem" }}
+        >
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="link-button"
+            style={{ fontSize: "0.85rem" }}
+          >
+            Forgot password?
+          </button>
         </div>
 
         {error && <div className="error-message">{error}</div>}
