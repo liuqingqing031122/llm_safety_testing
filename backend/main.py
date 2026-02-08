@@ -42,7 +42,7 @@ app.add_middleware(SessionMiddleware, secret_key="-ELNQriWOTXQNE49B07rgtv8811eAz
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "https://llm-user-study.netlify.app",],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

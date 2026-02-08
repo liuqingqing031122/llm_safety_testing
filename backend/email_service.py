@@ -17,7 +17,7 @@ async def send_reset_email(to_email: str, reset_token: str):
     """Send password reset email"""
     
     # Create reset link (update with your frontend URL)
-    reset_link = f"https://llmsafetytesting-production-d556.up.railway.app/reset-password?token={reset_token}"
+    reset_link = f" https://llm-user-study.netlify.app/reset-password?token={reset_token}"
     
     # Create message
     message = MIMEMultipart("alternative")
