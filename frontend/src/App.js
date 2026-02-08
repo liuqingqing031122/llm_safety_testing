@@ -492,7 +492,7 @@ function App() {
       const response = await fetch(
         `https://llmsafetytesting-production-d556.up.railway.app/api/conversations/${convId}/history`,
         {
-          headers: getHeaders(), // ← Use auth headers
+          headers: getHeaders(),
         }
       );
       const data = await response.json();
@@ -515,8 +515,23 @@ function App() {
           });
         });
 
+        // Sort runs by run number
         Object.keys(responsesByModel).forEach((model) => {
           responsesByModel[model].sort((a, b) => a.run - b.run);
+
+          // ✅ 新增：找到分数最高的run并设置为current
+          const bestRunIndex = responsesByModel[model].reduce(
+            (maxIdx, run, idx, arr) => {
+              return (run.weighted_score || 0) >
+                (arr[maxIdx].weighted_score || 0)
+                ? idx
+                : maxIdx;
+            },
+            0
+          );
+
+          // 设置这个model的当前run为分数最高的那个
+          setCurrentRunIndex(turn.turn_number, model, bestRunIndex);
         });
 
         return {
