@@ -6,6 +6,7 @@ import ScoringTable from "./ScoringTable";
 import { useAuth } from "./AuthContext";
 import ResetPassword from "./ResetPassword";
 import PageGuide from "./PageGuide";
+import LoadingEstimate from "./LoadingEstimate";
 
 function App() {
   const { token, login } = useAuth();
@@ -573,6 +574,17 @@ function App() {
   // Render Input Page (Page 1)
   const renderInputPage = () => (
     <main className="container page-container">
+      <div className="disclaimer-banner">
+        <div className="disclaimer-content">
+          <div className="disclaimer-text">
+            <strong>Disclaimer:</strong> This is not a professional medical
+            platform. Do not fully rely on these responses for actual medical
+            decisions. Always consult a qualified healthcare professional for
+            medical advice.
+          </div>
+        </div>
+      </div>
+
       <form className="message-form" onSubmit={sendMessage}>
         <h2>{getGreeting()}, how can I help you today?</h2>
 
@@ -800,7 +812,7 @@ function App() {
                       <line x1="12" y1="18" x2="12" y2="12"></line>
                       <line x1="9" y1="15" x2="15" y2="15"></line>
                     </svg>
-                    Scoring
+                    Start Scoring
                   </>
                 )}
               </button>
@@ -1071,6 +1083,12 @@ function App() {
       <Navbar onNavigate={handleNavigation} />
 
       {currentPage === "input" ? renderInputPage() : renderResultsPage()}
+
+      {/* Loading Estimate Overlays */}
+      {isLoading && (
+        <LoadingEstimate type="generating" modelCount={selectedModels.length} />
+      )}
+      {isScoring && <LoadingEstimate type="scoring" />}
 
       {/* Page Guide Tutorial */}
       {showGuide && guidePhase && (

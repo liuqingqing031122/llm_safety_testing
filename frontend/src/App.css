@@ -1257,3 +1257,134 @@
     min-width: 150px;
   }
 }
+
+.disclaimer-banner {
+  margin-bottom: 15px;
+  border-radius: 12px;
+}
+
+.disclaimer-banner {
+  position: sticky;
+  top: 0;
+  z-index: 9995;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-bottom: 3px solid #2196f3;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+  animation: slideDown 0.4s ease;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.disclaimer-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.disclaimer-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.disclaimer-text {
+  flex: 1;
+  color: #1565c0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.disclaimer-text strong {
+  font-weight: 700;
+  color: #0d47a1;
+}
+
+.disclaimer-dismiss {
+  background: transparent;
+  border: none;
+  color: #1565c0;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.disclaimer-dismiss:hover {
+  background: rgba(33, 150, 243, 0.2);
+  color: #0d47a1;
+  transform: scale(1.1);
+}
+
+.disclaimer-dismiss:active {
+  transform: scale(0.95);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .disclaimer-content {
+    padding: 0.875rem 1.25rem;
+    gap: 0.75rem;
+  }
+
+  .disclaimer-icon {
+    font-size: 1.5rem;
+  }
+
+  .disclaimer-text {
+    font-size: 0.875rem;
+  }
+
+  .disclaimer-dismiss {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .disclaimer-content {
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .disclaimer-icon {
+    font-size: 1.25rem;
+  }
+
+  .disclaimer-text {
+    font-size: 0.8rem;
+  }
+
+  .disclaimer-text strong {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .disclaimer-dismiss {
+    font-size: 1.1rem;
+    padding: 0.25rem;
+  }
+}
