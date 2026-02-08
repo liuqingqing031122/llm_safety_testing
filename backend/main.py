@@ -38,7 +38,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-app.add_middleware(SessionMiddleware, secret_key="-ELNQriWOTXQNE49B07rgtv8811eAzGurVhTfySUc0M")
+app.add_middleware(SessionMiddleware, secret_key="-ELNQriWOTXQNE49B07rgtv8811eAzGurVhTfySUc0M", same_site="none", https_only=True)
 
 app.add_middleware(
     CORSMiddleware,
