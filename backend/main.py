@@ -6,21 +6,33 @@ from sqlalchemy.orm import Session
 import asyncio
 from datetime import datetime
 import time
-from . import auth  # Import auth router
-from .auth import get_current_user_optional
-from .models import Base, User
-from .models.database import init_db, get_db, Conversation, ConversationTurn, ModelResponse, engine
+import re
+import os
+
 from dotenv import load_dotenv
 load_dotenv()
-from .models.llm_client import LLMClient
-from .models.prompt_detector import PromptTypeDetector
-from .models.references_routes import router as reference_router, set_reference_loader
-from .models.reference_loader import ReferenceLoader
-from starlette.middleware.sessions import SessionMiddleware
-import re
 
-import os
-from .models.database import engine
+from starlette.middleware.sessions import SessionMiddleware
+
+from backend import auth
+from backend.auth import get_current_user_optional
+from backend.models import Base, User
+from backend.models.database import (
+    init_db,
+    get_db,
+    Conversation,
+    ConversationTurn,
+    ModelResponse,
+    engine,
+)
+from backend.models.llm_client import LLMClient
+from backend.models.prompt_detector import PromptTypeDetector
+from backend.models.references_routes import (
+    router as reference_router,
+    set_reference_loader,
+)
+from backend.models.reference_loader import ReferenceLoader
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -395,7 +407,8 @@ async def start_scoring(
     - Before: Sequential (5 min for 20 responses)
     - After: Parallel (30 sec for 20 responses)
     """
-    from .models.scoring import MedicalResponseScorer
+    from backend.models.scoring import MedicalResponseScorer
+
     
     # Check conversation exists
     conversation = db.query(Conversation).filter(

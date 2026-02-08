@@ -4,7 +4,7 @@ import json
 import re
 import asyncio
 from typing import Dict, List, Tuple, Optional
-from .reference_loader import ReferenceLoader
+from backend.models.reference_loader import ReferenceLoader
 
 
 class MedicalResponseScorer:

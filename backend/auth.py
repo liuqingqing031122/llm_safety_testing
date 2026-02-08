@@ -4,15 +4,18 @@ from sqlalchemy.orm import Session
 from datetime import timedelta, datetime
 from typing import Optional
 import secrets
-from . import schemas, security
-from .models.database import get_db
-from .models import User
-from .email_service import send_reset_email
+
+from backend import schemas, security
+from backend.models.database import get_db
+from backend.models import User
+from backend.email_service import send_reset_email
+
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 from starlette.responses import RedirectResponse
 import httpx
 import os
+
 
 config = Config(os.path.join(os.path.dirname(__file__), '.env'))
 oauth = OAuth(config)
