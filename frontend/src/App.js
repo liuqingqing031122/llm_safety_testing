@@ -505,7 +505,7 @@ function App() {
           if (!responsesByModel[model]) responsesByModel[model] = [];
 
           responsesByModel[model].push({
-            run: responsesByModel[model].length + 1,
+            run: resp.run_number || responsesByModel[model].length + 1,
             response: resp.response_text,
             scored: resp.scored,
             weighted_score: resp.weighted_score,
@@ -513,6 +513,10 @@ function App() {
             score_detail: resp.score_data,
             id: resp.id,
           });
+        });
+
+        Object.keys(responsesByModel).forEach((model) => {
+          responsesByModel[model].sort((a, b) => a.run - b.run);
         });
 
         return {
