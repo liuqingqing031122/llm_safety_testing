@@ -27,7 +27,7 @@ function ResetPassword({ token, onComplete }) {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/api/auth/reset-password",
+        "https://llmsafetytesting-production-d556.up.railway.app/api/auth/reset-password",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

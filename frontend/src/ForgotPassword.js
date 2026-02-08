@@ -15,7 +15,7 @@ function ForgotPassword({ onBack, onClose }) {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/api/auth/forgot-password",
+        "https://llmsafetytesting-production-d556.up.railway.app/api/auth/forgot-password",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

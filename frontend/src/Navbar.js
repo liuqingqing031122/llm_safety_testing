@@ -214,7 +214,7 @@ const ConversationHistoryModal = ({ onClose }) => {
   const loadConversations = React.useCallback(async () => {
     try {
       const response = await fetch(
-        "http://localhost:8000/api/users/conversations",
+        "https://llmsafetytesting-production-d556.up.railway.app/api/users/conversations",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -246,7 +246,7 @@ const ConversationHistoryModal = ({ onClose }) => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/conversations/${conversationId}/full-details`,
+        `https://llmsafetytesting-production-d556.up.railway.app/api/conversations/${conversationId}/full-details`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

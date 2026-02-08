@@ -15,11 +15,14 @@ function Login({ onSwitchToRegister, onClose, onForgotPassword }) {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await fetch(
+        "https://llmsafetytesting-production-d556.up.railway.app/api/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       if (!response.ok) {
         const data = await response.json();
@@ -39,11 +42,13 @@ function Login({ onSwitchToRegister, onClose, onForgotPassword }) {
   // ✅ NEW: Google OAuth login
   const handleGoogleLogin = () => {
     // Redirect to backend Google OAuth endpoint
-    window.location.href = "http://localhost:8000/api/auth/google/login";
+    window.location.href =
+      "https://llmsafetytesting-production-d556.up.railway.app/api/auth/google/login";
   };
 
   const handleGithubLogin = () => {
-    window.location.href = "http://localhost:8000/api/auth/github/login";
+    window.location.href =
+      "https://llmsafetytesting-production-d556.up.railway.app/api/auth/github/login";
   };
 
   return (
