@@ -43,26 +43,14 @@ function App() {
       "Content-Type": "application/json",
     };
 
-    // 从 localStorage 读取
-    const currentToken = localStorage.getItem("token");
-
-    // 调试信息
-    console.log("📍 getHeaders called");
-    console.log(
-      "🔑 Token from localStorage:",
-      currentToken ? "EXISTS" : "MISSING"
-    );
-    console.log("🔑 Token from state:", token ? "EXISTS" : "MISSING");
-
-    if (currentToken) {
-      headers["Authorization"] = `Bearer ${currentToken}`;
-      console.log("✅ Authorization header added");
-    } else {
-      console.log("⚠️ No token - request will be unauthorized");
+    if (token) {
+      // ✅ Only add if token exists
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     return headers;
   };
+
   // ✅ NEW: Handle OAuth callback
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -223,7 +211,7 @@ function App() {
       if (resultsHeader) {
         const rect = resultsHeader.getBoundingClientRect();
         // If header is scrolled out of view, show floating button
-        setShowFloatingButton(rect.top < -50);
+        setShowFloatingButton(rect.top < 0);
       }
     };
 
