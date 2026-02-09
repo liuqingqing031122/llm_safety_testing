@@ -3,6 +3,7 @@ import { useAuth } from "./AuthContext";
 import "./Auth.css";
 
 function Register({ onSwitchToLogin, onClose }) {
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,14 +29,11 @@ function Register({ onSwitchToLogin, onClose }) {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "https://llmsafetytesting-production-d556.up.railway.app/api/auth/register",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
 
       if (!response.ok) {
         const data = await response.json();

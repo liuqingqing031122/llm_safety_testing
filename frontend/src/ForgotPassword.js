@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./Navbar.css";
 
 function ForgotPassword({ onBack, onClose }) {
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -14,14 +15,11 @@ function ForgotPassword({ onBack, onClose }) {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "https://llmsafetytesting-production-d556.up.railway.app/api/auth/forgot-password",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
       const data = await response.json();
 

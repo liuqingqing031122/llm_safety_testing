@@ -9,6 +9,8 @@ import PageGuide from "./PageGuide";
 import LoadingEstimate from "./LoadingEstimate";
 
 function App() {
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+  console.log("API_BASE_URL =", API_BASE_URL);
   const { token, login } = useAuth();
   const [isResetPassword, setIsResetPassword] = useState(false);
   const [resetToken, setResetToken] = useState("");
@@ -289,7 +291,7 @@ function App() {
       if (!convId) {
         console.log("📝 Creating new conversation...");
         const createResponse = await fetch(
-          "https://llmsafetytesting-production-d556.up.railway.app/api/conversations",
+          `${API_BASE_URL}/api/conversations`,
           {
             method: "POST",
             headers: getHeaders(), // ← Use auth headers
@@ -310,7 +312,7 @@ function App() {
       // ✨ Step 2: Send message
       console.log(`💬 Sending message to conversation ${convId}...`);
       const response = await fetch(
-        `https://llmsafetytesting-production-d556.up.railway.app/api/conversations/${convId}/send`,
+        `${API_BASE_URL}/api/conversations/${convId}/send`,
         {
           method: "POST",
           headers: getHeaders(), // ← Use auth headers
@@ -424,7 +426,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `https://llmsafetytesting-production-d556.up.railway.app/api/conversations/${conversationId}/score`,
+        `${API_BASE_URL}/api/conversations/${conversationId}/score`,
         {
           method: "POST",
           headers: getHeaders(),
@@ -443,43 +445,13 @@ function App() {
 
       // ⭐ fetch final summary from backend
       const summaryResponse = await fetch(
-        `https://llmsafetytesting-production-d556.up.railway.app/api/conversations/${conversationId}/final-summary`,
+        `${API_BASE_URL}/api/conversations/${conversationId}/final-summary`,
         {
           headers: getHeaders(),
         }
       );
       const summaryData = await summaryResponse.json();
       setFinalSummary(summaryData);
-
-      // ✅ NEW: Set best run for recommended model in conversation history
-      if (
-        summaryData.recommended_models &&
-        summaryData.recommended_models.length > 0
-      ) {
-        const recommendedModel = summaryData.recommended_models[0];
-
-        // Find the best run for the recommended model across all turns
-        turns.forEach((turn) => {
-          const modelRuns = turn.responses[recommendedModel];
-          if (modelRuns) {
-            // Find the index of the run with highest score
-            const bestRunIndex = modelRuns.reduce((maxIdx, run, idx, arr) => {
-              const currentScore = run.weighted_score || 0;
-              const maxScore = arr[maxIdx].weighted_score || 0;
-              return currentScore > maxScore ? idx : maxIdx;
-            }, 0);
-
-            console.log(
-              `🎯 Setting best run for ${recommendedModel} in turn ${turn.turn_number}: index ${bestRunIndex}`
-            );
-            setCurrentRunIndex(
-              turn.turn_number,
-              recommendedModel,
-              bestRunIndex
-            );
-          }
-        });
-      }
 
       setIsScored(true);
 
@@ -519,7 +491,7 @@ function App() {
   const loadScores = async (convId) => {
     try {
       const response = await fetch(
-        `https://llmsafetytesting-production-d556.up.railway.app/api/conversations/${convId}/history`,
+        `${API_BASE_URL}/api/conversations/${convId}/history`,
         {
           headers: getHeaders(),
         }

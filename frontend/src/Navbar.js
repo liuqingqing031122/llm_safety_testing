@@ -203,6 +203,7 @@ const Navbar = ({ onNavigate }) => {
 
 // Conversation History Modal Component
 const ConversationHistoryModal = ({ onClose }) => {
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const { token } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -213,15 +214,12 @@ const ConversationHistoryModal = ({ onClose }) => {
 
   const loadConversations = React.useCallback(async () => {
     try {
-      const response = await fetch(
-        "https://llmsafetytesting-production-d556.up.railway.app/api/users/conversations",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/users/conversations`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         throw new Error("Failed to load conversations");
@@ -234,7 +232,7 @@ const ConversationHistoryModal = ({ onClose }) => {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, API_BASE_URL]);
 
   useEffect(() => {
     loadConversations();
@@ -246,7 +244,7 @@ const ConversationHistoryModal = ({ onClose }) => {
 
     try {
       const response = await fetch(
-        `https://llmsafetytesting-production-d556.up.railway.app/api/conversations/${conversationId}/full-details`,
+        `${API_BASE_URL}/api/conversations/${conversationId}/full-details`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -376,13 +374,34 @@ const ConversationHistoryModal = ({ onClose }) => {
                           ));
                         }
 
+                        console.log(
+                          "DEBUG model_responses:",
+                          turn.model_responses.map((r) => ({
+                            model: r.model_name,
+                            scored: r.scored,
+                            weighted_score: r.weighted_score,
+                            has_score_data: !!r.score_data,
+                            id: r.id,
+                          }))
+                        );
+
                         // ✅ Show response from the overall best model
                         const bestModelName =
                           conversationDetails.final_summary
                             ?.recommended_models[0];
-                        const bestModelResponse = scoredResponses.find(
+                        // ✅ Find the BEST scoring response from the recommended model
+                        const bestModelResponses = scoredResponses.filter(
                           (r) => r.model_name === bestModelName
                         );
+
+                        const bestModelResponse =
+                          bestModelResponses.length > 0
+                            ? bestModelResponses.reduce((best, current) =>
+                                current.weighted_score > best.weighted_score
+                                  ? current
+                                  : best
+                              )
+                            : null;
 
                         // Fallback if best model didn't respond to this turn
                         const displayResponse =

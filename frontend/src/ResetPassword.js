@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./App.css";
 
 function ResetPassword({ token, onComplete }) {
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -26,14 +27,11 @@ function ResetPassword({ token, onComplete }) {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "https://llmsafetytesting-production-d556.up.railway.app/api/auth/reset-password",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, new_password: newPassword }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, new_password: newPassword }),
+      });
 
       const data = await response.json();
 
