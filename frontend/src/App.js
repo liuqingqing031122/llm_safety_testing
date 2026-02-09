@@ -427,7 +427,7 @@ function App() {
         `https://llmsafetytesting-production-d556.up.railway.app/api/conversations/${conversationId}/score`,
         {
           method: "POST",
-          headers: getHeaders(), // ← Use auth headers
+          headers: getHeaders(),
         }
       );
 
@@ -445,11 +445,41 @@ function App() {
       const summaryResponse = await fetch(
         `https://llmsafetytesting-production-d556.up.railway.app/api/conversations/${conversationId}/final-summary`,
         {
-          headers: getHeaders(), // ← Use auth headers
+          headers: getHeaders(),
         }
       );
       const summaryData = await summaryResponse.json();
       setFinalSummary(summaryData);
+
+      // ✅ NEW: Set best run for recommended model in conversation history
+      if (
+        summaryData.recommended_models &&
+        summaryData.recommended_models.length > 0
+      ) {
+        const recommendedModel = summaryData.recommended_models[0];
+
+        // Find the best run for the recommended model across all turns
+        turns.forEach((turn) => {
+          const modelRuns = turn.responses[recommendedModel];
+          if (modelRuns) {
+            // Find the index of the run with highest score
+            const bestRunIndex = modelRuns.reduce((maxIdx, run, idx, arr) => {
+              const currentScore = run.weighted_score || 0;
+              const maxScore = arr[maxIdx].weighted_score || 0;
+              return currentScore > maxScore ? idx : maxIdx;
+            }, 0);
+
+            console.log(
+              `🎯 Setting best run for ${recommendedModel} in turn ${turn.turn_number}: index ${bestRunIndex}`
+            );
+            setCurrentRunIndex(
+              turn.turn_number,
+              recommendedModel,
+              bestRunIndex
+            );
+          }
+        });
+      }
 
       setIsScored(true);
 
@@ -462,14 +492,13 @@ function App() {
           setGuidePhase("scoring");
           setShowGuide(true);
           setHasShownScoringGuide(true);
-        }, 500); // Show quickly after scoring completes
+        }, 500);
       }
 
       // ✨ Scroll to the persistent reminder (scores-above-reminder) after scoring
       setTimeout(() => {
         const scoresReminder = document.querySelector(".scores-above-reminder");
         if (scoresReminder) {
-          // Get the element's position
           const elementPosition = scoresReminder.getBoundingClientRect().top;
           const offsetPosition = elementPosition + window.pageYOffset - 120;
 
