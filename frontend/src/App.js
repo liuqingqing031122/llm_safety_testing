@@ -497,7 +497,6 @@ function App() {
       );
       const data = await response.json();
 
-      // ✅ 先收集所有的 bestRunIndexes
       const newRunIndexes = {};
 
       const updatedTurns = data.turns.map((turn) => {
@@ -518,11 +517,9 @@ function App() {
           });
         });
 
-        // Sort runs by run number
         Object.keys(responsesByModel).forEach((model) => {
           responsesByModel[model].sort((a, b) => a.run - b.run);
 
-          // 找到分数最高的run
           const bestRunIndex = responsesByModel[model].reduce(
             (maxIdx, run, idx, arr) => {
               return (run.weighted_score || 0) >
@@ -533,11 +530,9 @@ function App() {
             0
           );
 
-          // ✅ 收集到临时对象中
           const key = `${turn.turn_number}-${model}`;
           newRunIndexes[key] = bestRunIndex;
 
-          // 🔍 调试日志
           console.log(`Turn ${turn.turn_number}, Model ${model}:`);
           console.log(
             "All runs:",
@@ -560,9 +555,10 @@ function App() {
         };
       });
 
-      // ✅ 一次性更新所有 state
-      setTurns(updatedTurns);
-      setCurrentRunIndexes(newRunIndexes); // 直接替换整个对象
+      // ✅ 关键改动：使用批量状态更新，确保顺序
+      // 方法 1：使用 callback 形式确保基于最新状态
+      setCurrentRunIndexes(() => newRunIndexes);
+      setTurns(() => updatedTurns);
 
       console.log("🎯 Final run indexes:", newRunIndexes);
     } catch (err) {
