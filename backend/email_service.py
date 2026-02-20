@@ -6,9 +6,10 @@ load_dotenv()
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 async def send_reset_email(to_email: str, reset_token: str):
-    reset_link = f"https://llm-user-study.netlify.app/reset-password?token={reset_token}"
+    reset_link = f"{FRONTEND_URL}/reset-password?token={reset_token}"
 
     payload = {
         "from": FROM_EMAIL,

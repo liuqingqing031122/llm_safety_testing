@@ -20,6 +20,9 @@ import os
 config = Config(os.path.join(os.path.dirname(__file__), '.env'))
 oauth = OAuth(config)
 
+FRONTEND_URL = os.getenv("FRONTEND_URL")
+BACKEND_URL = os.getenv("BACKEND_URL")
+
 oauth.register(
     name='google',
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
@@ -260,7 +263,8 @@ def reset_password(request: schemas.PasswordReset, db: Session = Depends(get_db)
 @router.get("/google/login")
 async def google_login(request: Request):
     """Redirect to Google OAuth"""
-    redirect_uri = "https://llmsafetytesting-production-d556.up.railway.app/api/auth/google/callback"
+    redirect_uri = f"{BACKEND_URL}/api/auth/google/callback"
+    print("Redirect URI being sent:", redirect_uri)
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
@@ -321,7 +325,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         access_token = security.create_access_token(data={"sub": str(user.id)})
         
         # Redirect to frontend with token
-        frontend_url = f"https://llm-user-study.netlify.app/?oauth_token={access_token}&oauth_email={email}&oauth_name={name}"
+        frontend_url = f"{FRONTEND_URL}/?oauth_token={access_token}&oauth_email={email}&oauth_name={name}"
         
         return RedirectResponse(url=frontend_url)
         
@@ -329,13 +333,13 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         print(f"❌ Google OAuth error: {e}")
         import traceback
         traceback.print_exc()
-        error_url = f"https://llm-user-study.netlify.app/?oauth_error={str(e)}"
+        error_url = f"{FRONTEND_URL}/?oauth_error={str(e)}"
         return RedirectResponse(url=error_url)
     
 @router.get("/github/login")
 async def github_login(request: Request):
     """Redirect to GitHub OAuth"""
-    redirect_uri = "https://llmsafetytesting-production-d556.up.railway.app/api/auth/github/callback"
+    redirect_uri = f"{BACKEND_URL}/api/auth/github/callback"
     return await oauth.github.authorize_redirect(request, redirect_uri)
 
 
@@ -405,7 +409,7 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
         access_token = security.create_access_token(data={"sub": str(user.id)})
         
         # Redirect to frontend with token
-        frontend_url = f"https://llm-user-study.netlify.app/?oauth_token={access_token}&oauth_email={email}&oauth_name={name}"
+        frontend_url = f"{FRONTEND_URL}/?oauth_token={access_token}&oauth_email={email}&oauth_name={name}"
         
         return RedirectResponse(url=frontend_url)
         
@@ -413,7 +417,7 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
         print(f"❌ GitHub OAuth error: {e}")
         import traceback
         traceback.print_exc()
-        error_url = f"https://llm-user-study.netlify.app/?oauth_error={str(e)}"
+        error_url = f"{FRONTEND_URL}/?oauth_error={str(e)}"
         return RedirectResponse(url=error_url)
 
 # Helper function to get current user (use this in protected routes)
