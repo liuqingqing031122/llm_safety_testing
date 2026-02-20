@@ -1,0 +1,16 @@
+from fastapi.testclient import TestClient
+from backend.main import app
+
+client = TestClient(app)
+
+
+def test_app_starts():
+    response = client.get("/")
+    # 有的项目没 root route，所以允许 404
+    assert response.status_code in [200, 404]
+
+
+def test_invalid_score_endpoint():
+    response = client.post("/api/conversations/999/score")
+    # 不存在的 conversation id
+    assert response.status_code in [400, 404, 422]
