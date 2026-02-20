@@ -41,7 +41,9 @@ function ForgotPassword({ onBack, onClose }) {
       <h2>Reset Password</h2>
       <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
         Enter your email address and we'll send you a link to reset your
-        password.
+        password. <br />
+        Please check your spam or junk folder if you do not see the email in
+        your inbox.
       </p>
 
       <form onSubmit={handleSubmit}>
