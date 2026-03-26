@@ -342,15 +342,11 @@ Database is automatically created on first run.
 
 Academic project for educational purposes.
 
-## Author
-
-Computing Science Level 4 Student  
-University of Glasgow  
-2025-2026
-
 ## Contact
 
-For questions about this project or technical issues, please contact the researcher via the University of Glasgow email system.
+For questions about this project or technical issues, please contact:
+
+Qingqing Liu - 2756053L@student.gla.ac.uk
 
 For academic supervision inquiries, please contact through the School of Computing Science.
 
