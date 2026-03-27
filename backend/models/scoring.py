@@ -31,6 +31,7 @@ class MedicalResponseScorer:
         # ✅ Use AsyncAnthropic for non-blocking calls
         self.client = AsyncAnthropic(api_key=api_key)
         self.optimization_level = optimization_level
+        self.semaphore = asyncio.Semaphore(10)
         
         # Load reference data
         self.reference_loader = ReferenceLoader()
@@ -251,11 +252,12 @@ Respond with ONLY a JSON object:
 
         try:
             # ✅ Async API call
-            message = await self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=1500,
-                messages=[{"role": "user", "content": prompt}]
-            )
+            async with self.semaphore:
+                message = await self.client.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=1500,
+                    messages=[{"role": "user", "content": prompt}]
+                )
             
             response_text = message.content[0].text.strip()
             
@@ -434,11 +436,12 @@ Respond with ONLY a JSON object:
 
         try:
             # ✅ Async API call
-            message = await self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=1500,
-                messages=[{"role": "user", "content": prompt}]
-            )
+            async with self.semaphore:
+                message = await self.client.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=1500,
+                    messages=[{"role": "user", "content": prompt}]
+                )
             
             response_text = message.content[0].text.strip()
             
@@ -566,11 +569,12 @@ Respond with ONLY a JSON object:
 
         try:
             # ✅ Async API call
-            message = await self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=1500,
-                messages=[{"role": "user", "content": prompt}]
-            )
+            async with self.semaphore:
+                message = await self.client.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=1500,
+                    messages=[{"role": "user", "content": prompt}]
+                )
             
             response_text = message.content[0].text.strip()
             
